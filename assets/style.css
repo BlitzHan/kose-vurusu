@@ -169,6 +169,18 @@ button, select { font: inherit; color: inherit; }
 .fs.G { background: var(--murekkep); color: var(--bilet); }
 .fs.B { background: var(--cizgi); color: var(--murekkep); }
 .fs.M { color: var(--murekkep-3); box-shadow: inset 0 0 0 1.5px var(--cizgi-koyu); }
+.sira-satir { display: block; margin-top: 8px; font-size: 11.5px; font-weight: 650; line-height: 1.35; color: var(--murekkep-3); }
+.sira-satir em { font-style: normal; color: var(--sinyal); }
+.durum { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.durum-kart { padding: 12px 14px; border-radius: 10px; background: var(--bilet-2); font-size: 13.5px; line-height: 1.4; }
+.durum-kart h5 { margin: 0 0 6px; font-size: 15px; font-weight: 800; }
+.durum-kart dl { margin: 0 0 8px; display: grid; gap: 3px; }
+.durum-kart dl div { display: flex; gap: 8px; }
+.durum-kart dt { min-width: 6.5em; font-weight: 700; color: var(--murekkep-3); }
+.durum-kart dd { margin: 0; }
+.durum-kart p { margin: 0 0 6px; color: var(--murekkep-2); }
+.durum-kart .mot { margin: 0; font-size: 12.5px; color: var(--murekkep-3); }
+.durum-kart .mot.dusuk b { color: var(--sinyal); }
 .xg { text-align: center; padding-top: 19px; min-width: 70px; }
 .xg b { display: block; font-size: 17px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
 .xg small { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--murekkep-3); }
@@ -247,16 +259,24 @@ button, select { font: inherit; color: inherit; }
 /* tablolar */
 .tablo-kap { overflow-x: auto; margin: 0 -18px; padding: 0 18px; scrollbar-width: thin; scrollbar-color: var(--cizgi-koyu) transparent; }
 table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-th { text-align: right; padding: 6px 7px; white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--murekkep-3); border-bottom: 1.5px solid var(--murekkep); }
+th { text-align: right; padding: 6px 7px; white-space: normal; min-width: 4.2em; vertical-align: bottom; line-height: 1.2; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--murekkep-3); border-bottom: 1.5px solid var(--murekkep); }
 td { padding: 8px 7px; text-align: right; border-bottom: 1px solid var(--cizgi); white-space: nowrap; }
 th:first-child, td:first-child { text-align: left; padding-left: 0; }
 .mac-tablo td:first-child { position: sticky; left: 0; background: var(--bilet); }
-.mac-tablo .rakip { display: block; max-width: 8.5em; overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
+.mac-tablo .rakip { display: block; max-width: 10em; overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
 .mac-tablo .tr { display: block; font-size: 11px; color: var(--murekkep-3); }
 .sk { font-weight: 800; }
 .sk.G { color: var(--guclu); }
 .sk.M { color: var(--murekkep-3); }
 td small { color: var(--murekkep-3); }
+td.cift b { font-weight: 750; }
+td.cift i { font-style: normal; margin: 0 3px; color: var(--murekkep-3); }
+.okuma { margin: 0 0 8px; font-size: 13px; color: var(--murekkep-2); line-height: 1.4; }
+.okuma b { color: var(--murekkep); }
+.okuma small { font-size: 1em; color: var(--murekkep-3); }
+.sozluk { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 16px; margin: 12px 0 0; font-size: 12.5px; line-height: 1.35; }
+.sozluk dt { font-weight: 750; color: var(--murekkep); }
+.sozluk dd { margin: 0; color: var(--murekkep-3); }
 tfoot td { font-weight: 750; border-bottom: 0; border-top: 1.5px solid var(--murekkep); }
 tfoot td:first-child { background: var(--bilet); }
 
@@ -334,7 +354,13 @@ tfoot td:first-child { background: var(--bilet); }
 @media (min-width: 800px) {
   .ust-ic, .sayfa, .alt { max-width: 1240px; }
   .sayfa { padding-left: 24px; padding-right: 24px; }
-  .biletler { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 28px 22px; }
+  /* bölümler (bant, takımlar, özet, sinyaller, skorlar, koçan) satır satır hizalanır; biletler eş boy */
+  .biletler { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row dense; gap: 28px 22px; }
+  .bilet { display: grid; grid-row: span 6; grid-template-rows: subgrid; row-gap: 0; }
+  .govde { display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0; }
+  .skorlar { align-self: end; }
+  /* açılan bilet tüm satırı kaplar; tablolar sığar, komşular uzamaz */
+  .bilet.acik { grid-column: 1 / -1; }
 }
 @media (min-width: 1140px) {
   .biletler { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -66,18 +66,24 @@
   }
 
   // ---------------------------------------------------------------- koçan panelleri
+  // Sütunlar: [başlık, açıklama, alan, ondalık]
+  const SUTUNLAR = [
+    ['xG', 'Gol beklentisi: pozisyonların gol olma ihtimali toplamı', 'xg', 2],
+    ['İsabetli şut', 'Kaleyi bulan şut', 'isabetli', 1],
+    ['Net fırsat', 'Gol olması beklenen büyük pozisyon', 'buyuk', 1],
+    ['Ceza sahasında top', 'Ceza sahası içinde topla buluşma sayısı', 'ceza', 0],
+    ['Korner', 'Kullanılan korner', 'korner', 1],
+    ['Kart', 'Sarı + kırmızı kart', 'kart', 1],
+  ];
+  const cift = (a, b, n) => `<b>${a == null ? '–' : ondalik(a, n)}</b><i>–</i><small>${b == null ? '–' : ondalik(b, n)}</small>`;
+
   function macTablosu(t) {
     const satir = (x) => {
       const h = x.at > x.ye ? 'G' : x.at === x.ye ? 'B' : 'M';
       return `<tr>
-        <td><span class="rakip">${esc(x.rakip)}</span><span class="tr">${esc(x.tarih.slice(8, 10) + '.' + x.tarih.slice(5, 7))} · ${x.evde ? 'İç saha' : 'Deplasman'}</span></td>
+        <td><span class="rakip">${esc(x.rakip)}</span><span class="tr">${esc(x.turnuva)} · ${x.evde ? 'iç saha' : 'dep.'} · ${esc(x.tarih.slice(8, 10) + '.' + x.tarih.slice(5, 7))}</span></td>
         <td><span class="sk ${h}">${x.at}-${x.ye}</span>${x.iy_at != null ? `<span class="tr">İY ${x.iy_at}-${x.iy_ye}</span>` : ''}</td>
-        <td>${ondalik(x.xg_l, 2)} <small>${ondalik(x.xg_a, 2)}</small></td>
-        <td>${x.isabetli_l ?? '–'} <small>${x.isabetli_a ?? '–'}</small></td>
-        <td>${x.buyuk_l ?? '–'} <small>${x.buyuk_a ?? '–'}</small></td>
-        <td>${x.ceza_l ?? '–'} <small>${x.ceza_a ?? '–'}</small></td>
-        <td>${x.korner_l ?? '–'} <small>${x.korner_a ?? '–'}</small></td>
-        <td>${x.kart_l ?? '–'} <small>${x.kart_a ?? '–'}</small></td>
+        ${SUTUNLAR.map(([, , k, n]) => `<td class="cift">${cift(x[k + '_l'], x[k + '_a'], k === 'xg' ? 2 : 0)}</td>`).join('')}
         <td>${x.topa_l != null ? '%' + Math.round(x.topa_l) : '–'}</td>
         <td>${ondalik(x.ilk11_reyting, 2)}</td>
       </tr>`;
@@ -85,21 +91,19 @@
     const ort = (ms, k) => { const v = ms.map((x) => x[k]).filter((v) => v != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
     const ozet = (n) => {
       const ms = t.maclar.slice(0, n);
-      return `<tr><td>Son ${n} ort.</td><td>${ondalik(ort(ms, 'at'))}-${ondalik(ort(ms, 'ye'))}</td>
-        <td>${ondalik(ort(ms, 'xg_l'), 2)} <small>${ondalik(ort(ms, 'xg_a'), 2)}</small></td>
-        <td>${ondalik(ort(ms, 'isabetli_l'))} <small>${ondalik(ort(ms, 'isabetli_a'))}</small></td>
-        <td>${ondalik(ort(ms, 'buyuk_l'))} <small>${ondalik(ort(ms, 'buyuk_a'))}</small></td>
-        <td>${ondalik(ort(ms, 'ceza_l'), 0)} <small>${ondalik(ort(ms, 'ceza_a'), 0)}</small></td>
-        <td>${ondalik(ort(ms, 'korner_l'))} <small>${ondalik(ort(ms, 'korner_a'))}</small></td>
-        <td>${ondalik(ort(ms, 'kart_l'))} <small>${ondalik(ort(ms, 'kart_a'))}</small></td>
+      return `<tr><td>Son ${n} maç ort.</td><td>${ondalik(ort(ms, 'at'))}-${ondalik(ort(ms, 'ye'))}</td>
+        ${SUTUNLAR.map(([, , k, d]) => `<td class="cift">${cift(ort(ms, k + '_l'), ort(ms, k + '_a'), d)}</td>`).join('')}
         <td>%${Math.round(ort(ms, 'topa_l'))}</td><td>${ondalik(ort(ms, 'ilk11_reyting'), 2)}</td></tr>`;
     };
-    return `<div class="tablo-kap"><table class="mac-tablo">
-      <thead><tr><th>Rakip</th><th>Skor</th><th>xG</th><th>İsabetli</th><th>Büyük f.</th><th>Ceza s.</th><th>Korner</th><th>Kart</th><th>Topa</th><th>11 rt.</th></tr></thead>
+    const turlar = [...new Set(t.maclar.map((x) => x.turnuva))].join(', ');
+    return `<p class="okuma">Her hücre <b>${esc(t.ad)}</b> – <small>rakip</small>. Örnek: korner <b>5</b>–<small>11</small> → ${esc(t.ad)} 5, rakibi 11 korner kullandı.</p>
+    <div class="tablo-kap"><table class="mac-tablo">
+      <thead><tr><th>Rakip</th><th>Skor</th>${SUTUNLAR.map(([ad, ac]) => `<th title="${esc(ac)}">${ad}</th>`).join('')}<th title="Topa sahip olma yüzdesi">Topla oynama</th><th title="İlk 11'in maç reyting ortalaması (10 üzerinden)">İlk 11 reytingi</th></tr></thead>
       <tbody>${t.maclar.map(satir).join('')}</tbody>
       <tfoot>${ozet(5)}${ozet(10)}</tfoot>
     </table></div>
-    <p class="not">Her hücrede önce ${esc(t.ad)}, küçük rakam rakip. Ceza s.: ceza sahasında topla buluşma. 11 rt.: ilk 11'in ortalama reytingi.</p>`;
+    <dl class="sozluk">${SUTUNLAR.slice(0, 4).map(([ad, ac]) => `<div><dt>${ad}</dt><dd>${ac}</dd></div>`).join('')}<div><dt>İlk 11 reytingi</dt><dd>İlk 11'in maç notu ortalaması (10 üzerinden)</dd></div></dl>
+    <p class="not">Son ${t.maclar.length} resmî maç, tüm turnuvalar (${esc(turlar)}); hazırlık maçları hariç.</p>`;
   }
 
   function oyuncuPaneli(t, form, eksik) {
@@ -158,6 +162,33 @@
   }
 
   // ---------------------------------------------------------------- bilet
+  function siraSatiri(m, t) {
+    const o = m.onem && m.onem[t];
+    if (!o) return '';
+    const p = [o.avrupa && `${esc(o.avrupa.ad)} ${o.avrupa.sira}. · ${o.avrupa.puan} P`, o.lig && `${esc(o.lig.ad)} ${o.lig.sira}.`].filter(Boolean);
+    return `<span class="sira-satir">${p.join('<br>')}${o.seviye === 'düşük' ? '<br><em>önemi az</em>' : ''}</span>`;
+  }
+
+  function durumPaneli(m) {
+    const o = m.onem;
+    if (!o) return '<p class="not">Bu maç için puan durumu yok.</p>';
+    const kart = (t) => {
+      const x = o[t], a = x.avrupa, l = x.lig;
+      return `<div class="durum-kart">
+        <h5>${esc(m[t].ad)}</h5>
+        <dl>
+          ${a ? `<div><dt>${esc(a.ad)}</dt><dd><b>${a.sira}.</b> sıra · ${a.puan} puan · ${a.oynanan} maç</dd></div>` : ''}
+          ${l ? `<div><dt>${esc(l.ad)}</dt><dd><b>${l.sira}.</b> sıra · ${l.puan} puan · ${l.oynanan} maç${l.lider_fark > 0 ? ` · lidere ${l.lider_fark} puan` : ' · lider'}</dd></div>` : ''}
+        </dl>
+        ${x.metin ? `<p>${esc(x.metin)}</p>` : ''}
+        <p class="mot ${x.seviye === 'düşük' ? 'dusuk' : ''}">Önem: <b>${esc(x.seviye)}</b>${x.carpan !== 1 ? ` · beklenen gol ×${ondalik(x.carpan, 2)}` : ' · modele etkisi yok'}</p>
+      </div>`;
+    };
+    return `<div class="durum">${kart('ev')}${kart('dep')}</div>
+      <p class="not">Lig aşaması ${LIG_MAC} maç: ilk 8 son 16'ya doğrudan, 9–24 arası play-off. Turu garantileyen ya da şansı kalmayan takımın beklenen golü biraz düşürülür.${o.tur ? ` Bu maç ${o.tur}. hafta.` : ''}</p>`;
+  }
+  const LIG_MAC = 8;
+
   function bilet(m) {
     const bitti = m.sonuc && m.sonuc.skor;
     const yer = [m.stad, m.yayin].filter(Boolean).map(esc).join(' · ');
@@ -169,13 +200,13 @@
           <div class="saat">${bitti ? esc(m.sonuc.skor.replace('-', '–')) : esc(m.saat)}<small>${bitti ? 'Maç bitti' : tarihYaz(m.tarih, { day: 'numeric', month: 'long' })}</small></div>
         </header>
         <div class="takimlar">
-          <div class="takim ev"><span class="rol">Ev</span><h3 class="${uzunluk(m.ev.ad)}">${esc(m.ev.ad)}</h3>${formSeridi(m.ev)}</div>
+          <div class="takim ev"><span class="rol">Ev</span><h3 class="${uzunluk(m.ev.ad)}">${esc(m.ev.ad)}</h3>${formSeridi(m.ev)}${siraSatiri(m, 'ev')}</div>
           <div class="xg"><b>${ondalik(m.model.lambda[0])} – ${ondalik(m.model.lambda[1])}</b><small>Beklenen gol</small></div>
-          <div class="takim dep"><span class="rol">Deplasman</span><h3 class="${uzunluk(m.dep.ad)}">${esc(m.dep.ad)}</h3>${formSeridi(m.dep)}</div>
+          <div class="takim dep"><span class="rol">Deplasman</span><h3 class="${uzunluk(m.dep.ad)}">${esc(m.dep.ad)}</h3>${formSeridi(m.dep)}${siraSatiri(m, 'dep')}</div>
         </div>
         <div class="ozet"><h2>${esc(m.baslik)}</h2>${m.ozet ? `<p>${esc(m.ozet)}</p>` : ''}</div>
         <section class="sinyaller" aria-label="Veri ne diyor">
-          <h4 class="bolum-baslik">Veri ne diyor <span>büyük rakam: güven puanı</span></h4>
+          <h4 class="bolum-baslik">Veri ne diyor <span>büyük rakam: 100 üzerinden puan</span></h4>
           ${sinyaller(m)}
         </section>
         <section class="skorlar" aria-label="Olası skorlar">
@@ -185,7 +216,7 @@
       </div>
       <div class="kocan">
         <button class="kocan-ac" type="button" aria-expanded="false" aria-controls="c-${esc(m.id)}">
-          <span class="yazi"><b>Verileri incele</b><span>Son 10 maç · oyuncu formu · tüm olasılıklar</span></span>
+          <span class="yazi"><b>Verileri incele</b><span>Son 10 maç · oyuncu formu · puan durumu · olasılıklar</span></span>
           <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 9l4.5 4.5L15.5 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="cekmece" id="c-${esc(m.id)}"><div><div class="cekmece-ic"></div></div></div>
@@ -196,13 +227,14 @@
   function cekmeceCiz(el) {
     const m = veri.maclar.find((x) => x.id === el.dataset.id);
     const sekme = el.dataset.sekme, taraf = el.dataset.takim;
-    const sek = [['maclar', 'Son maçlar'], ['oyuncular', 'Oyuncular'], ['olasilik', 'Olasılıklar']];
-    const takimSec = sekme === 'olasilik' ? '' :
+    const sek = [['maclar', 'Son maçlar'], ['oyuncular', 'Oyuncular'], ['durum', 'Durum'], ['olasilik', 'Olasılık']];
+    const takimSec = sekme === 'olasilik' || sekme === 'durum' ? '' :
       `<div class="takim-sec" role="group" aria-label="Takım">${['ev', 'dep'].map((t) =>
         `<button type="button" data-takim-sec="${t}" aria-pressed="${t === taraf}">${esc(m[t].ad)}</button>`).join('')}</div>`;
     let panel;
     if (sekme === 'maclar') panel = macTablosu(m[taraf]);
     else if (sekme === 'oyuncular') panel = oyuncuPaneli(m[taraf], m.model.form[taraf], m.kadro[taraf].eksik);
+    else if (sekme === 'durum') panel = durumPaneli(m);
     else panel = olasilikPaneli(m);
     $('.cekmece-ic', el).innerHTML = `
       <div class="sekmeler" role="tablist">${sek.map(([k, ad]) =>
@@ -247,6 +279,8 @@
       const acik = el.classList.toggle('acik');
       e.target.closest('.kocan-ac').setAttribute('aria-expanded', acik);
       if (acik && !$('.cekmece-ic', el).children.length) cekmeceCiz(el);
+      // geniş ekranda açılan bilet satırın tamamına geçer ve yer değiştirebilir: gözden kaçmasın
+      if (acik && matchMedia('(min-width: 800px)').matches) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
       return;
     }
     const el2 = e.target.closest('[data-elenen]');
