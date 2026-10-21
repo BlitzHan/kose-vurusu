@@ -1,4 +1,4 @@
-// Köşe Vuruşu · maç föyü. Tek veri kaynağı: data/tahminler.json
+// Köşe Vuruşu · biletler. Tek veri kaynağı: data/tahminler.json
 (() => {
   'use strict';
 
@@ -7,6 +7,7 @@
   const yuzde = (p) => (p == null ? '–' : '%' + Math.round(p * 100));
   const ondalik = (v, h = 1) => (v == null ? '–' : Number(v).toLocaleString('tr-TR', { minimumFractionDigits: h, maximumFractionDigits: h }));
   const tarihYaz = (t, s) => new Intl.DateTimeFormat('tr-TR', s).format(new Date(t + 'T12:00:00'));
+  const uzunluk = (ad) => { const k = Math.max(...ad.split(' ').map((w) => w.length)); return k > 12 ? 'cok-uzun' : k > 8 ? 'uzun' : ''; };
   const sayiYaz = (v) => (Number.isInteger(v) ? v : String(v).replace('.', ','));
   const kisa = (ad) => (ad.length <= 11 ? ad : ad.split(' ').filter((w) => w.length > 2).pop());
 
@@ -26,7 +27,7 @@
     return `<small>Sinyal · skor</small><b>${tut}/${sec.length}</b> · <b>${skor}/${biten.length}</b>`;
   }
 
-  // ---------------------------------------------------------------- föy gövdesi
+  // ---------------------------------------------------------------- bilet gövdesi
   function formSeridi(t) {
     return `<div class="form-seridi" aria-label="Son 5 maç">${t.maclar.slice(0, 5).map((x) => {
       const h = x.at > x.ye ? 'G' : x.at === x.ye ? 'B' : 'M';
@@ -46,8 +47,8 @@
       const [eo, en] = o.gecmis_ev, [dO, dn] = o.gecmis_dep;
       const gec = o.gecmis == null ? '' : ` · Son 10: <b>${esc(kisa(m.ev.ad))} ${sayiYaz(eo)}/${en}</b>, <b>${esc(kisa(m.dep.ad))} ${sayiYaz(dO)}/${dn}</b>`;
       return `
-        <div class="sinyal ${o.seviye === 'Güçlü' ? 'guclu' : 'orta'} ${durum}">
-          <div class="yuzde" title="100 üzerinden puan"><span>${Math.round(o.puan * 100)}<small>PUAN</small></span></div>
+        <div class="sinyal ${durum}">
+          <div class="yuzde" style="--p:${Math.round(o.puan * 100)}"><sup>%</sup>${Math.round(o.puan * 100)}</div>
           <div class="ne"><span>${esc(o.ad)}</span>
             <span class="oran" title="Oran">${oranYaz(o.oran)}</span>
             <span class="etiket ${o.seviye === 'Güçlü' ? 'guclu' : 'orta'}">${esc(o.seviye)}</span>
@@ -160,12 +161,12 @@
       <p class="not">Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı. Yeşil satırlar seçilen sinyaller.</p>`;
   }
 
-  // ---------------------------------------------------------------- föy
+  // ---------------------------------------------------------------- bilet
   function siraSatiri(m, t) {
     const o = m.onem && m.onem[t];
     if (!o) return '';
     const p = [o.avrupa && `${esc(o.avrupa.ad)} ${o.avrupa.sira}. · ${o.avrupa.puan} P`, o.lig && `${esc(o.lig.ad)} ${o.lig.sira}.`].filter(Boolean);
-    return p.join(' · ') + (o.seviye === 'düşük' ? ' · <em>önemi az</em>' : '');
+    return `<span class="sira-satir">${p.join('<br>')}${o.seviye === 'düşük' ? '<br><em>önemi az</em>' : ''}</span>`;
   }
 
   function durumPaneli(m) {
@@ -188,40 +189,35 @@
   }
   const LIG_MAC = 8;
 
-  function foy(m, i) {
+  function bilet(m) {
     const bitti = m.sonuc && m.sonuc.skor;
     const yer = [m.stad, m.yayin].filter(Boolean).map(esc).join(' · ');
-    const satir = (t, l) => `
-          <div class="fk">
-            <div class="ad">
-              <b class="${m[t].ad.length > 14 ? 'uzun' : ''}"><i>${t === 'ev' ? 'Ev' : 'Dep'}</i>${esc(m[t].ad)}</b>
-              <div class="alt-satir">${formSeridi(m[t])}<small>${siraSatiri(m, t)}</small></div>
-            </div>
-            <span class="lam">${ondalik(l)}</span>
-          </div>`;
     return `
-    <article class="foy" id="${esc(m.id)}" data-id="${esc(m.id)}" data-sekme="maclar" data-takim="ev">
-      <header class="foy-bas${bitti ? ' bitti' : ''}">
-        <span class="no">${String(i + 1).padStart(2, '0')}</span>
-        <span class="tur">${esc(m.turnuva)}<small>${yer}</small></span>
-        <span class="saat">${bitti ? esc(m.sonuc.skor.replace('-', '–')) : esc(m.saat)}<small>${bitti ? 'Maç bitti' : tarihYaz(m.tarih, { day: 'numeric', month: 'long' })}</small></span>
-      </header>
-      <div class="fikstur">
-        <div class="fk-bas"><span>Takım · son 5 · sıra</span><span>Beklenen gol</span></div>${satir('ev', m.model.lambda[0])}${satir('dep', m.model.lambda[1])}
+    <article class="bilet" id="${esc(m.id)}" data-id="${esc(m.id)}" data-sekme="maclar" data-takim="ev">
+      <div class="govde">
+        <header class="bant${bitti ? ' bitti' : ''}">
+          <div><span class="tur">${esc(m.turnuva)}</span><span class="yer">${yer}</span></div>
+          <div class="saat">${bitti ? esc(m.sonuc.skor.replace('-', '–')) : esc(m.saat)}<small>${bitti ? 'Maç bitti' : tarihYaz(m.tarih, { day: 'numeric', month: 'long' })}</small></div>
+        </header>
+        <div class="takimlar">
+          <div class="takim ev"><span class="rol">Ev</span><div class="ad"><h3 class="${uzunluk(m.ev.ad)}">${esc(m.ev.ad)}</h3></div>${formSeridi(m.ev)}${siraSatiri(m, 'ev')}</div>
+          <div class="xg"><b>${ondalik(m.model.lambda[0])} – ${ondalik(m.model.lambda[1])}</b><small>Beklenen gol</small></div>
+          <div class="takim dep"><span class="rol">Deplasman</span><div class="ad"><h3 class="${uzunluk(m.dep.ad)}">${esc(m.dep.ad)}</h3></div>${formSeridi(m.dep)}${siraSatiri(m, 'dep')}</div>
+        </div>
+        <div class="ozet"><h2>${esc(m.baslik)}</h2>${m.ozet ? `<p>${esc(m.ozet)}</p>` : ''}</div>
+        <section class="sinyaller" aria-label="Veri ne diyor">
+          <h4 class="bolum-baslik">Veri ne diyor <span>büyük rakam: 100 üzerinden puan</span></h4>
+          ${sinyaller(m)}
+        </section>
+        <section class="skorlar" aria-label="Olası skorlar">
+          <h4 class="bolum-baslik">Olası skorlar</h4>
+          <div class="skor-satir">${skorlar(m)}</div>
+        </section>
       </div>
-      <div class="ozet"><h2>${esc(m.baslik)}</h2>${m.ozet ? `<p>${esc(m.ozet)}</p>` : ''}</div>
-      <section class="sinyaller" aria-label="Veri ne diyor">
-        <h4 class="bolum-baslik">Veri ne diyor <span>kutudaki sayı: 100 üzerinden puan</span></h4>
-        ${sinyaller(m)}
-      </section>
-      <section class="skorlar" aria-label="Olası skorlar">
-        <h4 class="bolum-baslik">Olası skorlar</h4>
-        <div class="skor-satir">${skorlar(m)}</div>
-      </section>
-      <div class="detay">
-        <button class="detay-ac" type="button" aria-expanded="false" aria-controls="c-${esc(m.id)}">
+      <div class="kocan">
+        <button class="kocan-ac" type="button" aria-expanded="false" aria-controls="c-${esc(m.id)}">
           <span class="yazi"><b>Verileri incele</b><span>Son 10 maç · oyuncu formu · puan durumu · olasılıklar</span></span>
-          <svg width="20" height="20" viewBox="0 0 22 22" aria-hidden="true"><path d="M5.5 8.5l5.5 5.5 5.5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 9l4.5 4.5L15.5 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <div class="cekmece" id="c-${esc(m.id)}"><div><div class="cekmece-ic"></div></div></div>
       </div>
@@ -255,17 +251,34 @@
     const maclar = veri.maclar.filter((m) => m.tarih === gun)
       .sort((a, b) => (b.manset - a.manset) || a.saat.localeCompare(b.saat));
     $('#gun-sec').value = gun;
-    $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maçlık föy</span>`;
+    $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maç · güçlü sinyaller önde, veriler koçanda</span>`;
     document.title = `Köşe Vuruşu · ${tarihYaz(gun, { day: 'numeric', month: 'long' })}`;
-    $('#biletler').innerHTML = maclar.map(foy).join('');
+    $('#biletler').innerHTML = maclar.map(bilet).join('');
+    sigdir();
   }
 
+  // Takım adı en fazla iki satıra ve sütuna sığana kadar yazıyı küçült; kelime ortadan bölünmesin.
+  function sigdir() {
+    document.querySelectorAll('.takim h3').forEach((h) => {
+      h.style.fontSize = '';
+      let boy = parseFloat(getComputedStyle(h).fontSize);
+      const kutu = h.parentElement.clientHeight;
+      while ((h.scrollWidth > h.clientWidth + 1 || h.offsetHeight > kutu + 1) && boy > 14) {
+        boy -= 1;
+        h.style.fontSize = boy + 'px';
+      }
+    });
+  }
+  let sigdirZaman;
+  window.addEventListener('resize', () => { clearTimeout(sigdirZaman); sigdirZaman = setTimeout(sigdir, 120); });
+  if (document.fonts) document.fonts.ready.then(() => sigdir());
+
   document.addEventListener('click', (e) => {
-    const el = e.target.closest('.foy');
+    const el = e.target.closest('.bilet');
     if (!el) return;
-    if (e.target.closest('.detay-ac')) {
+    if (e.target.closest('.kocan-ac')) {
       const acik = el.classList.toggle('acik');
-      e.target.closest('.detay-ac').setAttribute('aria-expanded', acik);
+      e.target.closest('.kocan-ac').setAttribute('aria-expanded', acik);
       if (acik && !$('.cekmece-ic', el).children.length) cekmeceCiz(el);
       return;
     }
@@ -289,7 +302,7 @@
       if (!r.ok) throw new Error(r.status);
       veri = await r.json();
     } catch (e) {
-      $('#biletler').innerHTML = '<p class="bos">Föy yüklenemedi. Sayfayı yenileyip tekrar dene.</p>';
+      $('#biletler').innerHTML = '<p class="bos">Biletler yüklenemedi. Sayfayı yenileyip tekrar dene.</p>';
       return;
     }
     if (!veri.maclar || !veri.maclar.length) {
