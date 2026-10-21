@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Köşe Vuruşu</title>
+<meta name="description" content="Maç öncesi veri: takımların ve oyuncuların son maçlarına göre olası sonuçlar.">
+<meta name="theme-color" content="#11562f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2311562f'/%3E%3Cpath d='M14 16h36v13a4 4 0 0 0 0 8v11H14V37a4 4 0 0 0 0-8z' fill='%23fbfbf6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="ust">
+  <div class="ust-ic">
+    <a class="logo" href="./">köşe vuruşu</a>
+    <div class="ust-sag">
+      <label class="gizli" for="gun-sec">Gün seç</label>
+      <select id="gun-sec" class="gun-sec"></select>
+      <div class="karne" id="karne" aria-live="polite"></div>
+    </div>
+  </div>
+</header>
+
+<main class="sayfa">
+  <p class="gun-baslik" id="gun-baslik"></p>
+  <div id="biletler" class="biletler">
+    <p class="bos">Biletler basılıyor…</p>
+  </div>
+</main>
+
+<footer class="alt">
+  <p>Olası sonuçlar, takımların son 10 resmî maçından, oyuncuların son 5 maç reytinglerinden ve piyasa oranlarından hesaplanır. Bahis tavsiyesi değildir.</p>
+  <details class="nasil">
+    <summary>Nasıl hesaplanıyor?</summary>
+    <ul>
+      <li><b>Beklenen gol:</b> son maçların gol beklentisi (xG), lig gücü ve iç/dış saha farkıyla düzeltilir.</li>
+      <li><b>Oyuncu formu:</b> muhtemel 11'in son 5 maç reytingi takımın olağan 11'iyle kıyaslanır; eksiklerin gol ve asist payı düşülür.</li>
+      <li><b>Piyasa dengesi:</b> modelin beklenen golü, oranlardan geri hesaplanan beklenen golle yarı yarıya harmanlanır; model kulüp kalitesini tek başına bilemez.</li>
+      <li><b>Sinyal:</b> yalnız oranı 1.35 ve üstü seçenekler değerlendirilir. Model olasılığı, iki takımın son 10 maçta o sonucu ne sıklıkla yaşadığı ve piyasa birlikte puanlanır; eşiği geçmeyen seçenek sinyal sayılmaz.</li>
+    </ul>
+  </details>
+</footer>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
