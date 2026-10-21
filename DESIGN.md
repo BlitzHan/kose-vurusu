@@ -1,6 +1,11 @@
 # Design
 
-World: **maç bileti** on a mown pitch. Operate surface, phone first.
+World: **maç föyü** (match-day programme sheet). Operate surface, phone first.
+
+> 2026-10-21: the ticket world below is archived; it lives at `/bilet/` and git tag `bilet-tasarimi`.
+> Föy: light pitch-grey page (`--zemin`), square-ish white sheets, pitch-green header band with match number,
+> stacked fixture rows (name, form strip, standings, expected goals), numbered score boxes (filled green = Güçlü),
+> ruled sections aligned across columns with subgrid; detail drawer opens under the sheet.
 
 ## Tokens (assets/style.css `:root`)
 
