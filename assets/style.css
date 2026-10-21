@@ -108,7 +108,7 @@ button, select { font: inherit; color: inherit; }
 .bos { color: var(--ust-yazi); opacity: .8; text-align: center; padding: 48px 0; }
 
 /* ---------------------------------------------------------------- bilet */
-.bilet { --kesik: 13px; position: relative; filter: drop-shadow(0 12px 16px rgba(3, 26, 12, .32)); }
+.bilet { --kesik: 13px; position: relative; container-type: inline-size; filter: drop-shadow(0 12px 16px rgba(3, 26, 12, .32)); }
 .govde, .kocan { position: relative; background: var(--bilet); color: var(--murekkep); }
 .govde {
   border-radius: 14px 14px 0 0;
@@ -157,10 +157,10 @@ button, select { font: inherit; color: inherit; }
 .takimlar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 8px; padding: 18px 18px 4px; }
 .takim h3 {
   margin: 0; font-weight: 850; font-stretch: 112%; line-height: .98; letter-spacing: -.025em;
-  font-size: clamp(21px, 6.4vw, 36px); overflow-wrap: normal; hyphens: none;
+  font-size: clamp(21px, 6.8cqi, 36px); overflow-wrap: normal; hyphens: none;
 }
-.takim h3.uzun { font-stretch: 88%; font-size: clamp(19px, 5.4vw, 31px); }
-.takim h3.cok-uzun { font-stretch: 78%; font-size: clamp(17px, 4.8vw, 28px); }
+.takim h3.uzun { font-stretch: 88%; font-size: clamp(19px, 5.8cqi, 31px); }
+.takim h3.cok-uzun { font-stretch: 78%; font-size: clamp(17px, 5.1cqi, 28px); }
 .takim.dep { text-align: right; }
 .takim .rol { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--murekkep-3); }
 .form-seridi { display: flex; gap: 3px; margin-top: 10px; }
@@ -174,7 +174,7 @@ button, select { font: inherit; color: inherit; }
 .xg small { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--murekkep-3); }
 
 .ozet { padding: 14px 18px 2px; }
-.ozet h2 { margin: 0 0 6px; font-weight: 800; font-size: clamp(19px, 4.8vw, 24px); line-height: 1.12; letter-spacing: -.015em; text-wrap: balance; }
+.ozet h2 { margin: 0 0 6px; font-weight: 800; font-size: clamp(19px, 5.1cqi, 24px); line-height: 1.12; letter-spacing: -.015em; text-wrap: balance; }
 .ozet p { margin: 0; color: var(--murekkep-2); font-size: 15.5px; line-height: 1.45; max-width: 60ch; text-wrap: pretty; }
 
 /* sinyaller */
@@ -308,19 +308,19 @@ tfoot td:first-child { background: var(--bilet); }
 .nasil ul { margin: 8px 0 0; padding-left: 18px; opacity: .85; max-width: 62ch; }
 .nasil li { margin-bottom: 6px; }
 
-@media (min-width: 640px) {
+@container (min-width: 600px) {
   .bant, .takimlar, .ozet, .sinyaller, .skorlar, .kocan-ac { padding-left: 26px; padding-right: 26px; }
   .cekmece-ic { padding: 0 26px 26px; }
   .tablo-kap { margin: 0 -26px; padding: 0 26px; }
   .takimlar { padding-top: 24px; }
   .sinyal { grid-template-columns: 5.4rem minmax(0, 1fr); }
 }
-@media (max-width: 380px) {
+@container (max-width: 350px) {
   .xg { min-width: 56px; }
   .skor { padding: 8px; }
   .skor b { font-size: 18px; }
 }
-@media (max-width: 520px) {
+@container (max-width: 490px) {
   .oyuncu { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "isim fo" "seri ga"; gap: 5px 10px; padding: 9px 0; }
   .oyuncu .isim { grid-area: isim; }
   .oyuncu .fo { grid-area: fo; }
@@ -329,6 +329,15 @@ tfoot td:first-child { background: var(--bilet); }
   .oyuncu-bas { grid-template-columns: minmax(0, 1fr) auto; }
   .oyuncu-bas span:nth-child(2), .oyuncu-bas span:nth-child(4) { display: none; }
   .r { width: 30px; }
+}
+/* geniş ekran: biletler yan yana */
+@media (min-width: 800px) {
+  .ust-ic, .sayfa, .alt { max-width: 1240px; }
+  .sayfa { padding-left: 24px; padding-right: 24px; }
+  .biletler { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 28px 22px; }
+}
+@media (min-width: 1140px) {
+  .biletler { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) {
   .kocan, .cekmece, .kocan-ac svg { transition: none; }
