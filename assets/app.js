@@ -200,9 +200,9 @@
           <div class="saat">${bitti ? esc(m.sonuc.skor.replace('-', '–')) : esc(m.saat)}<small>${bitti ? 'Maç bitti' : tarihYaz(m.tarih, { day: 'numeric', month: 'long' })}</small></div>
         </header>
         <div class="takimlar">
-          <div class="takim ev"><span class="rol">Ev</span><h3 class="${uzunluk(m.ev.ad)}">${esc(m.ev.ad)}</h3>${formSeridi(m.ev)}${siraSatiri(m, 'ev')}</div>
+          <div class="takim ev"><span class="rol">Ev</span><div class="ad"><h3 class="${uzunluk(m.ev.ad)}">${esc(m.ev.ad)}</h3></div>${formSeridi(m.ev)}${siraSatiri(m, 'ev')}</div>
           <div class="xg"><b>${ondalik(m.model.lambda[0])} – ${ondalik(m.model.lambda[1])}</b><small>Beklenen gol</small></div>
-          <div class="takim dep"><span class="rol">Deplasman</span><h3 class="${uzunluk(m.dep.ad)}">${esc(m.dep.ad)}</h3>${formSeridi(m.dep)}${siraSatiri(m, 'dep')}</div>
+          <div class="takim dep"><span class="rol">Deplasman</span><div class="ad"><h3 class="${uzunluk(m.dep.ad)}">${esc(m.dep.ad)}</h3></div>${formSeridi(m.dep)}${siraSatiri(m, 'dep')}</div>
         </div>
         <div class="ozet"><h2>${esc(m.baslik)}</h2>${m.ozet ? `<p>${esc(m.ozet)}</p>` : ''}</div>
         <section class="sinyaller" aria-label="Veri ne diyor">
@@ -241,7 +241,7 @@
         `<button type="button" class="sekme" role="tab" data-sekme-sec="${k}" aria-selected="${k === sekme}">${ad}</button>`).join('')}</div>
       ${takimSec}
       <div class="panel" role="tabpanel">${panel}</div>
-      <p class="not">Veri: ${esc(m.veri_tarihi)} (UTC) · ${m.kadro.kesin ? 'kesin 11' : 'muhtemel 11'}</p>`;
+      <p class="not">Veri çekildi: ${esc(m.veri_tarihi)} (TSİ) · ${m.kadro.kesin ? 'kesin 11' : 'muhtemel 11'}</p>`;
   }
 
   // ---------------------------------------------------------------- sayfa
@@ -257,12 +257,13 @@
     sigdir();
   }
 
-  // Takım adındaki en uzun kelime sütuna sığana kadar yazıyı küçült; kelime ortadan bölünmesin.
+  // Takım adı en fazla iki satıra ve sütuna sığana kadar yazıyı küçült; kelime ortadan bölünmesin.
   function sigdir() {
     document.querySelectorAll('.takim h3').forEach((h) => {
       h.style.fontSize = '';
       let boy = parseFloat(getComputedStyle(h).fontSize);
-      while (h.scrollWidth > h.clientWidth + 1 && boy > 14) {
+      const kutu = h.parentElement.clientHeight;
+      while ((h.scrollWidth > h.clientWidth + 1 || h.offsetHeight > kutu + 1) && boy > 14) {
         boy -= 1;
         h.style.fontSize = boy + 'px';
       }
@@ -279,8 +280,6 @@
       const acik = el.classList.toggle('acik');
       e.target.closest('.kocan-ac').setAttribute('aria-expanded', acik);
       if (acik && !$('.cekmece-ic', el).children.length) cekmeceCiz(el);
-      // geniş ekranda açılan bilet satırın tamamına geçer ve yer değiştirebilir: gözden kaçmasın
-      if (acik && matchMedia('(min-width: 800px)').matches) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
       return;
     }
     const el2 = e.target.closest('[data-elenen]');

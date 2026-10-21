@@ -6,7 +6,7 @@
 <title>Köşe Vuruşu</title>
 <meta name="description" content="Maç öncesi veri: takımların ve oyuncuların son maçlarına göre olası sonuçlar.">
 <meta name="theme-color" content="#11562f">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2311562f'/%3E%3Cpath d='M14 16h36v13a4 4 0 0 0 0 8v11H14V37a4 4 0 0 0 0-8z' fill='%23fbfbf6'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2311562f'/%3E%3Cpath d='M8 7v17h18M8 17a7 7 0 0 1 7 7' fill='none' stroke='%23f3f7ef' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M8 6.5l8 2.6-8 2.7z' fill='%23e5501a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
@@ -15,7 +15,15 @@
 <body>
 <header class="ust">
   <div class="ust-ic">
-    <a class="logo" href="./">köşe vuruşu</a>
+    <a class="logo" href="./" aria-label="Köşe Vuruşu, ana sayfa">
+      <svg class="logo-isaret" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="var(--ust-yazi)"/>
+        <path d="M8 7v17h18" fill="none" stroke="var(--cim-koyu)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 17a7 7 0 0 1 7 7" fill="none" stroke="var(--cim-koyu)" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M8 6.5l8 2.6-8 2.7z" fill="var(--sinyal)"/>
+      </svg>
+      <span class="logo-yazi">Köşe Vuruşu<small>maç öncesi veri</small></span>
+    </a>
     <div class="ust-sag">
       <label class="gizli" for="gun-sec">Gün seç</label>
       <select id="gun-sec" class="gun-sec"></select>
