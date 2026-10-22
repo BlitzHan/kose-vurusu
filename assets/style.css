@@ -392,6 +392,15 @@ tfoot td:first-child { background: var(--bilet); }
 @media (min-width: 1140px) {
   .biletler { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+/* çok maçlı günler: bilet ~330px altına inmeden sütun eklenir (dizüstü 4, geniş ekran 5) */
+@media (min-width: 1420px) {
+  .ust-ic, .sayfa, .alt { max-width: 1880px; }
+  .biletler { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px 18px; }
+  .bilet { --ad-boy: 26px; }
+}
+@media (min-width: 1780px) {
+  .biletler { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
 @media (prefers-reduced-motion: reduce) {
   .kocan, .cekmece, .kocan-ac svg { transition: none; }
   .bilet.acik .kocan { animation: none; }
