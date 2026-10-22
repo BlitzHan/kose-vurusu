@@ -221,7 +221,7 @@
       </div>`;
     };
     return `<div class="durum">${kart('ev')}${kart('dep')}</div>
-      <p class="not">Lig aşaması ${LIG_MAC} maç: ilk 8 son 16'ya doğrudan, 9–24 arası play-off. Turu garantileyen ya da şansı kalmayan takımın beklenen golü biraz düşürülür.${o.tur ? ` Bu maç ${o.tur}. hafta.` : ''}</p>`;
+      <p class="not">Lig aşaması ${o.lig_mac || LIG_MAC} maç: ilk 8 son 16'ya doğrudan, 9–24 arası play-off. Turu garantileyen ya da şansı kalmayan takımın beklenen golü biraz düşürülür.${o.tur ? ` Bu maç ${o.tur}. hafta.` : ''}</p>`;
   }
   const LIG_MAC = 8;
 

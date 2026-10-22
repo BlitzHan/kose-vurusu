@@ -16,6 +16,53 @@ SURUM = {
 }
 PUAN = dict(model=0.6, gecmis=0.25, piyasa=0.15)
 
+# Lig gücü: takım verisindeki xG'yi Avrupa düzeyine çevirir (Premier League = 1).
+LIG_GUCU = {
+    'Premier League': 1.0, 'LaLiga': 0.95, 'Serie A': 0.93, 'Bundesliga': 0.93, 'Ligue 1': 0.86,
+    'Primeira Liga': 0.85, 'Eredivisie': 0.82, 'Pro League': 0.8, 'Süper Lig': 0.78,
+    'Ukrayna Ligi': 0.70, 'İskoçya Ligi': 0.68,
+    'Şampiyonlar Ligi': 1.0, 'Avrupa Ligi': 0.88, 'Konferans Ligi': 0.78,
+}
+# Takım verisinden beklenen gol (taban): 21 Ekim kayıtlarındaki değerlere ~0,1 hatayla oturtuldu.
+TABAN = dict(azalma=0.85, gol_payi=0.3, ev=1.1, cekim=0.4, ort=1.3)
+
+
+def _guc(maclar, lig):
+    A = D = W = 0.0
+    for i, x in enumerate(maclar):
+        if x.get('xg_l') is None:
+            continue
+        w = TABAN['azalma'] ** i
+        L = LIG_GUCU.get(x['turnuva'], LIG_GUCU.get(lig, 0.8))
+        g = TABAN['gol_payi']
+        A += w * ((1 - g) * x['xg_l'] + g * x['at']) * L
+        D += w * ((1 - g) * x['xg_a'] + g * x['ye']) / L
+        W += w
+    return (A / W, D / W) if W else (TABAN['ort'], TABAN['ort'])
+
+
+def taban(ev_maclar, ev_lig, dep_maclar, dep_lig):
+    (Ae, De), (Ad, Dd) = _guc(ev_maclar, ev_lig), _guc(dep_maclar, dep_lig)
+    mu, k, H = TABAN['ort'], TABAN['cekim'], TABAN['ev']
+    c = lambda x: mu + k * (x - mu)
+    return [round(c(Ae) * c(Dd) / mu * H, 2), round(c(Ad) * c(De) / mu / H, 2)]
+
+
+def piyasa_lambda(ms1, msx, ms2, ust25, rho=-0.075):
+    """Piyasanın maç sonucu ve 2,5 üst olasılıklarına en iyi uyan beklenen gol çifti."""
+    en = None
+    for a in range(30, 400, 5):
+        for b in range(20, 350, 5):
+            l1, l2 = a / 100, b / 100
+            M = matris(l1, l2, rho)
+            p1 = sum(M[i][j] for i in range(N) for j in range(N) if i > j)
+            px = sum(M[i][i] for i in range(N))
+            pu = sum(M[i][j] for i in range(N) for j in range(N) if i + j > 2.5)
+            e = (p1 - ms1) ** 2 + (px - msx) ** 2 + (1 - p1 - px - ms2) ** 2 + (pu - ust25) ** 2
+            if en is None or e < en[0]:
+                en = (e, l1, l2)
+    return [en[1], en[2]]
+
 
 # ---------------------------------------------------------------- dağılımlar
 def pois(k, l):
