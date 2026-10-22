@@ -2,3 +2,4 @@ ham/
 .DS_Store
 .claude/
 .impeccable/review/
+__pycache__/

@@ -65,6 +65,39 @@
       `<div class="skor${i === 0 ? ' ilk' : ''}${olan === s ? ' oldu' : ''}"><b>${esc(s.replace('-', '–'))}</b><span>${yuzde(p)}</span></div>`).join('');
   }
 
+  // ---------------------------------------------------------------- maç sonu
+  // Satırlar: [başlık, alan, ondalık, önek]
+  const MAC_SONU = [
+    ['xG', 'xg', 2, ''],
+    ['Şut', 'sut', 0, ''],
+    ['İsabetli şut', 'isabetli', 0, ''],
+    ['Net fırsat', 'buyuk', 0, ''],
+    ['Ceza sahasında top', 'ceza', 0, ''],
+    ['Korner', 'korner', 0, ''],
+    ['Kart', 'kart', 0, ''],
+    ['Topla oynama', 'topa', 0, '%'],
+  ];
+
+  function macSonu(m) {
+    const s = m.sonuc, ist = s.ist || {};
+    const soyad = (ad) => ad.replace(/^[A-ZÇĞİÖŞÜ]\.\s/, '');
+    const olaylar = (t) => [
+      ...(s.goller || []).filter((g) => g.taraf === t).map((g) => `${g.dk}' ${esc(soyad(g.oyuncu))}`),
+      ...(s.kirmizi || []).filter((g) => g.taraf === t).map((g) => `<em>${g.dk}' ${esc(soyad(g.oyuncu))} kırmızı</em>`),
+    ].join(', ') || '–';
+    const satirlar = MAC_SONU.filter(([, k]) => ist[k]).map(([ad, k, n, on]) => {
+      const [a, b] = ist[k];
+      return `<tr><td class="${a > b ? 'fazla' : ''}">${on}${ondalik(a, n)}</td><th scope="row">${ad}</th><td class="${b > a ? 'fazla' : ''}">${on}${ondalik(b, n)}</td></tr>`;
+    }).join('');
+    const [l0, l1] = m.model.lambda;
+    return `<div class="mac-sonu">
+      <h4 class="bolum-baslik">Maç sonu <span>İY ${esc((s.iy || '').replace('-', '–'))}</span></h4>
+      <div class="ms-goller"><p>${olaylar('ev')}</p><p>${olaylar('dep')}</p></div>
+      <table class="ms-tablo">${satirlar}</table>
+      <p class="ms-bek">Bizim beklentimiz: gol <b>${ondalik(l0)} – ${ondalik(l1)}</b>${m.model.korner ? ` · korner <b>${ondalik(m.model.korner)}</b>` : ''}${m.model.kart ? ` · kart <b>${ondalik(m.model.kart)}</b>` : ''}</p>
+    </div>`;
+  }
+
   // ---------------------------------------------------------------- koçan panelleri
   // Sütunlar: [başlık, açıklama, alan, ondalık]
   const SUTUNLAR = [
@@ -136,10 +169,13 @@
     const secili = new Set(m.oneriler.map((o) => o.kod));
     const gruplar = [...new Set(m.model.pazarlar.map((x) => x.grup))].sort((a, b) => GRUP_SIRA.indexOf(a) - GRUP_SIRA.indexOf(b));
     const elenen = m.model.pazarlar.filter((x) => x.elendi).length;
+    const bitti = !!(m.sonuc && m.sonuc.skor);
+    // Olan: 1 tuttu, 0 yattı, 0.5 yarım, null iade
+    const olanYaz = (v) => (v == null ? '<span class="olan iade">İade</span>' : v >= 0.75 ? '<span class="olan evet">✓</span>' : v > 0.25 ? '<span class="olan">½</span>' : '<span class="olan hayir">–</span>');
     const govde = gruplar.map((g) => {
       const satirlar = m.model.pazarlar.filter((x) => x.grup === g).sort((a, b) => a.elendi - b.elendi || b.puan - a.puan);
-      return `<tr class="gr${satirlar.every((x) => x.elendi) ? ' elendi' : ''}"><td colspan="5">${esc(g)}</td></tr>` + satirlar.map((x) =>
-        `<tr class="${secili.has(x.kod) ? 'secili' : ''}${x.elendi ? ' elendi' : ''}"><td>${esc(x.ad)}</td><td>${oranYaz(x.oran)}</td><td>${yuzde(x.model)}</td><td>${yuzde(x.gecmis)}</td><td><b>${yuzde(x.puan)}</b></td></tr>`).join('');
+      return `<tr class="gr${satirlar.every((x) => x.elendi) ? ' elendi' : ''}"><td colspan="${bitti ? 6 : 5}">${esc(g)}</td></tr>` + satirlar.map((x) =>
+        `<tr class="${secili.has(x.kod) ? 'secili' : ''}${x.elendi ? ' elendi' : ''}"><td>${esc(x.ad)}</td><td>${oranYaz(x.oran)}</td><td>${yuzde(x.model)}</td><td>${yuzde(x.gecmis)}</td><td><b>${yuzde(x.puan)}</b></td>${bitti ? `<td>${'olan' in x ? olanYaz(x.olan) : ''}</td>` : ''}</tr>`).join('');
     }).join('');
     const mt = m.model.matris, enb = Math.max(...mt.flat());
     const olan = m.sonuc && m.sonuc.skor;
@@ -152,7 +188,7 @@
     });
     const [tb, l] = [m.model.taban, m.model.lambda];
     return `<div class="tablo-kap"><table class="pazar-tablo">
-        <thead><tr><th>Seçenek</th><th>Oran</th><th>Model</th><th>Son 10</th><th>Puan</th></tr></thead>
+        <thead><tr><th>Seçenek</th><th>Oran</th><th>Model</th><th>Son 10</th><th>Puan</th>${bitti ? '<th title="Maçta gerçekleşti mi">Olan</th>' : ''}</tr></thead>
         <tbody>${govde}</tbody></table></div>
       ${elenen ? `<button type="button" class="elenen-ac" data-elenen aria-pressed="false">Oranı ${oranYaz(m.oran_min)} altı ve çok yüksek ${elenen} seçeneği göster</button>` : ''}
       <p class="bg">Beklenen gol: takım verisi <b>${ondalik(tb[0], 2)} – ${ondalik(tb[1], 2)}</b>, oyuncu formuyla <b>${ondalik(m.model.veri_l[0], 2)} – ${ondalik(m.model.veri_l[1], 2)}</b>${m.model.piyasa_l ? `, piyasa <b>${ondalik(m.model.piyasa_l[0], 2)} – ${ondalik(m.model.piyasa_l[1], 2)}</b>` : ''}. Kullanılan: <b>${ondalik(l[0], 2)} – ${ondalik(l[1], 2)}</b>${m.model.korner ? ` · beklenen korner <b>${ondalik(m.model.korner)}</b>, kart <b>${ondalik(m.model.kart)}</b>` : ''}.</p>
@@ -212,6 +248,7 @@
         <section class="skorlar" aria-label="Olası skorlar">
           <h4 class="bolum-baslik">Olası skorlar</h4>
           <div class="skor-satir">${skorlar(m)}</div>
+          ${bitti ? macSonu(m) : ''}
         </section>
       </div>
       <div class="kocan">
