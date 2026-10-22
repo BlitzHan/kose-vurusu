@@ -16,6 +16,16 @@
 
   let veri = null;
   let gunler = [];
+  let sira = 'saat';
+  try { if (localStorage.getItem('sira') === 'guven') sira = 'guven'; } catch (e) { /* depolama kapalı */ }
+
+  // Güvenilirlik: en iyi önerinin seviyesi (Güçlü > Orta > yok), sonra puanı; eşitlikte saat.
+  const SEVIYE = { 'Güçlü': 2, 'Orta': 1 };
+  const guven = (m) => Math.max(0, ...m.oneriler.map((o) => (SEVIYE[o.seviye] || 0) + o.puan));
+  const SIRALA = {
+    saat: (a, b) => a.saat.localeCompare(b.saat) || (b.manset - a.manset),
+    guven: (a, b) => guven(b) - guven(a) || a.saat.localeCompare(b.saat),
+  };
 
   // ---------------------------------------------------------------- karne
   function karne() {
@@ -286,9 +296,11 @@
     const istenen = decodeURIComponent(location.hash.slice(1));
     const gun = gunler.includes(istenen) ? istenen : gunler[0];
     const maclar = veri.maclar.filter((m) => m.tarih === gun)
-      .sort((a, b) => (b.manset - a.manset) || a.saat.localeCompare(b.saat));
+      .sort(SIRALA[sira]);
     $('#gun-sec').value = gun;
-    $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maç · güçlü sinyaller önde, veriler koçanda</span>`;
+    document.querySelectorAll('[data-sira]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.sira === sira));
+    const altYazi = sira === 'guven' ? 'en güvenilir sinyal önde' : 'saat sırasıyla';
+    $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maç · ${altYazi}, veriler koçanda</span>`;
     document.title = `Köşe Vuruşu · ${tarihYaz(gun, { day: 'numeric', month: 'long' })}`;
     $('#biletler').innerHTML = maclar.map(bilet).join('');
     sigdir();
@@ -311,6 +323,14 @@
   if (document.fonts) document.fonts.ready.then(() => sigdir());
 
   document.addEventListener('click', (e) => {
+    const sb = e.target.closest('[data-sira]');
+    if (sb) {
+      if (sb.dataset.sira === sira) return;
+      sira = sb.dataset.sira;
+      try { localStorage.setItem('sira', sira); } catch (err) { /* depolama kapalı */ }
+      ciz();
+      return;
+    }
     const el = e.target.closest('.bilet');
     if (!el) return;
     if (e.target.closest('.kocan-ac')) {
