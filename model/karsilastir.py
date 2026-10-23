@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import model
 
 yol = sys.argv[1] if len(sys.argv) > 1 else 'data/tahminler.json'
-surumler = sys.argv[2:] or ['v1', 'v2']
+surumler = sys.argv[2:] or ['v1', 'v2', 'v3']
 biten = [m for m in json.load(open(yol))['maclar'] if m.get('sonuc') and m['sonuc'].get('ist')]
 
 
