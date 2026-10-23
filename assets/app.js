@@ -28,13 +28,20 @@
   };
 
   // ---------------------------------------------------------------- karne
-  function karne() {
-    const biten = veri.maclar.filter((m) => m.sonuc && m.sonuc.isabet);
-    if (!biten.length) return '<small>Karne</small><b>yeni</b>';
+  // Seçili günün sinyal ve skor isabeti; altında tüm günlerin oranı (gelişimi görmek için).
+  function sayim(maclar) {
+    const biten = maclar.filter((m) => m.sonuc && m.sonuc.isabet);
     const sec = biten.flatMap((m) => m.sonuc.isabet.oneriler || []).filter((o) => o.tuttu != null);
-    const tut = sec.filter((o) => o.tuttu).length;
-    const skor = biten.filter((m) => m.sonuc.isabet.skor).length;
-    return `<small>Sinyal · skor</small><b>${tut}/${sec.length}</b> · <b>${skor}/${biten.length}</b>`;
+    return { mac: biten.length, sec: sec.length, tut: sec.filter((o) => o.tuttu).length, skor: biten.filter((m) => m.sonuc.isabet.skor).length };
+  }
+  const oran = (s) => (s.sec ? '%' + Math.round((s.tut / s.sec) * 100) : '–');
+
+  function karne(gun) {
+    const g = sayim(veri.maclar.filter((m) => m.tarih === gun));
+    const t = sayim(veri.maclar);
+    const toplam = t.sec ? `toplam ${oran(t)}` : '';
+    if (!g.mac) return `<small>Bu gün</small><b>bekleniyor</b><small>${toplam}</small>`;
+    return `<small>Sinyal · skor</small><b>${g.tut}/${g.sec}</b> · <b>${g.skor}/${g.mac}</b><small>${oran(g)} isabet<span class="karne-toplam"> · ${toplam}</span></small>`;
   }
 
   // ---------------------------------------------------------------- bilet gövdesi
@@ -298,6 +305,7 @@
     const maclar = veri.maclar.filter((m) => m.tarih === gun)
       .sort(SIRALA[sira]);
     $('#gun-sec').value = gun;
+    $('#karne').innerHTML = karne(gun);
     document.querySelectorAll('[data-sira]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.sira === sira));
     const altYazi = sira === 'guven' ? 'en güvenilir sinyal önde' : 'saat sırasıyla';
     $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maç · ${altYazi}, veriler koçanda</span>`;
@@ -369,7 +377,6 @@
     gunler = [...new Set(veri.maclar.map((m) => m.tarih))].sort().reverse();
     $('#gun-sec').innerHTML = gunler.map((g) => `<option value="${g}">${tarihYaz(g, { day: 'numeric', month: 'long' })}</option>`).join('');
     $('#gun-sec').addEventListener('change', (e) => { location.hash = e.target.value; });
-    $('#karne').innerHTML = karne();
     window.addEventListener('hashchange', ciz);
     ciz();
   }

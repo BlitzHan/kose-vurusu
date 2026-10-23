@@ -2,8 +2,11 @@
 
 v1: 21 Ekim 2026 maçlarında kullanılan sürüm (kayıtlı verilerden birebir geri çıkarıldı).
 v2: 21 Ekim sonuçlarından sonraki düzeltmeler (bkz. model/geri-bildirim-2026-10-21.md).
+v3: 22 Ekim sonuçlarından sonra (24 maç): piyasa payı, ilişkili öneri eleme, muhtemel 11'de form payı (bkz. geri-bildirim-2026-10-22.md).
 """
 import math
+
+import sonuc as S
 
 N = 11
 SURUM = {
@@ -14,7 +17,12 @@ SURUM = {
                korner_ort=9.7, korner_cekim=0.35, korner_r=14.0,
                kart_ort=3.8, kart_cekim=0.25, sayim_en_fazla='Orta'),
 }
-PUAN = dict(model=0.6, gecmis=0.25, piyasa=0.15)
+SURUM['v3'] = dict(SURUM['v2'], piyasa_agirlik=0.8, korelasyon=0.4, muhtemel_form=0.5)
+# v1/v2 için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı
+VARSAYILAN = dict(puan=dict(model=0.6, gecmis=0.25, piyasa=0.15), korelasyon=1.0, muhtemel_form=1.0)
+for _p in SURUM.values():
+    for _k, _v in VARSAYILAN.items():
+        _p.setdefault(_k, _v)
 
 # Lig gücü: takım verisindeki xG'yi Avrupa düzeyine çevirir (Premier League = 1).
 LIG_GUCU = {
@@ -107,15 +115,16 @@ def ah(M, cizgi, taraf):
 
 
 # ---------------------------------------------------------------- beklenen gol
-def carpan(f, f_rakip, onem):
-    """Oyuncu formu ve eksiklerle hücum çarpanı."""
-    c = math.exp(0.5 * f['fark'] - 0.3 * f_rakip['fark'] - 0.31 * f['eksik_payi']) * onem
+def carpan(f, f_rakip, onem, pay=1.0):
+    """Oyuncu formu ve eksiklerle hücum çarpanı. pay: 11 kesin değilken form farkına verilen pay."""
+    c = math.exp(pay * (0.5 * f['fark'] - 0.3 * f_rakip['fark']) - 0.31 * f['eksik_payi']) * onem
     return min(max(c, 0.85), 1.15)
 
 
-def beklenen_gol(md, onem, p):
-    car = [carpan(md['form']['ev'], md['form']['dep'], onem['ev']['carpan']),
-           carpan(md['form']['dep'], md['form']['ev'], onem['dep']['carpan'])]
+def beklenen_gol(md, onem, p, kesin=True):
+    pay = 1.0 if kesin else p['muhtemel_form']
+    car = [carpan(md['form']['ev'], md['form']['dep'], onem['ev']['carpan'], pay),
+           carpan(md['form']['dep'], md['form']['ev'], onem['dep']['carpan'], pay)]
     veri = [md['taban'][i] * car[i] for i in range(2)]
     w = p['piyasa_agirlik']
     lam = [veri[i] ** (1 - w) * md['piyasa_l'][i] ** w for i in range(2)]
@@ -151,8 +160,34 @@ def olasiliklar(l1, l2, p):
     return M, P
 
 
+# ---------------------------------------------------------------- ilişkili öneriler
+def _skorla(kod, i, j):
+    """Skor i-j iken pazarın değeri; skordan çözülemeyen pazar (ilk yarı, korner, kart) için None."""
+    if kod.startswith(('IY', 'KOR', 'KART')):
+        return None
+    if kod in ('ILK1', 'ILK2'):
+        a = i if kod == 'ILK1' else j
+        return a / (i + j) if i + j else 0
+    v = S.coz(kod, {'skor': [i, j], 'iy': [0, 0], 'ist': {'korner': [0, 0], 'kart': [0, 0]}, 'ilk_gol': None})
+    return 0.5 if v is None else v
+
+
+def korelasyon(a, b, M):
+    """İki pazarın skor matrisine göre korelasyonu. KG var ile 2,5 üst gibi aynı hikâyeye dayanan öneriler ~0,5 çıkar."""
+    ex = ey = exy = ex2 = ey2 = 0.0
+    for i in range(N):
+        for j in range(N):
+            x, y = _skorla(a, i, j), _skorla(b, i, j)
+            if x is None or y is None:
+                return 0.0
+            p = M[i][j]
+            ex, ey, exy, ex2, ey2 = ex + p * x, ey + p * y, exy + p * x * y, ex2 + p * x * x, ey2 + p * y * y
+    v = (ex2 - ex * ex) * (ey2 - ey * ey)
+    return (exy - ex * ey) / math.sqrt(v) if v > 0 else 0.0
+
+
 def seviye(x, en_fazla):
-    if x['elendi']:
+    if x['elendi'] or x['gecmis'] is None:  # son maçlarda sayılamayan pazar öneri olmaz
         return None
     m, g, pi, dg = x['model'], x['gecmis'], x['piyasa'], x['deger']
     s = None
@@ -165,14 +200,14 @@ def seviye(x, en_fazla):
     return s
 
 
-def hesapla(m, surum='v2', ham=None):
+def hesapla(m, surum='v3', ham=None):
     """Bir maçın model bloğunu ve önerilerini yeniden hesaplar (m yerinde değişir).
 
     ham: korner/kart için takım ortalamasından gelen ham beklenti; verilmezse m['model']['ham'] ya da mevcut değer.
     """
     p = SURUM[surum]
     md = m['model']
-    car, veri, lam = beklenen_gol(md, m['onem'], p)
+    car, veri, lam = beklenen_gol(md, m['onem'], p, m['kadro'].get('kesin', True))
     md['carpan'] = [round(c, 3) for c in car]
     md['veri_l'] = [round(v, 2) for v in veri]
     md['lambda'] = [round(v, 2) for v in lam]
@@ -197,15 +232,17 @@ def hesapla(m, surum='v2', ham=None):
         else:
             v = P[k]
         x['model'] = round(v, 3)
-        x['puan'] = round(sum(PUAN[a] * x[a] for a in PUAN), 3)
+        var = [a for a in p['puan'] if x[a] is not None]  # geçmiş yoksa kalan ağırlıklarla
+        x['puan'] = round(sum(p['puan'][a] * x[a] for a in var) / sum(p['puan'][a] for a in var), 3)
         x['deger'] = round(x['model'] * x['oran'] - 1, 3)
         x['seviye'] = seviye(x, p['sayim_en_fazla'] if k.startswith(('KOR', 'KART')) else 'Güçlü')
     aday = sorted([x for x in md['pazarlar'] if x['seviye']], key=lambda x: (x['seviye'] != 'Güçlü', -x['puan']))
     sec, gruplar = [], set()
     for x in aday:
-        if x['grup'] not in gruplar:
-            gruplar.add(x['grup'])
-            sec.append(x)
+        if x['grup'] in gruplar or any(korelasyon(x['kod'], y['kod'], M) > p['korelasyon'] for y in sec):
+            continue
+        gruplar.add(x['grup'])
+        sec.append(x)
         if len(sec) == 3:
             break
     alan = ['kod', 'ad', 'grup', 'oran', 'seviye', 'puan', 'model', 'gecmis', 'gecmis_ev', 'gecmis_dep', 'piyasa', 'deger']

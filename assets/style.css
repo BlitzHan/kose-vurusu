@@ -361,6 +361,9 @@ tfoot td:first-child { background: var(--bilet); }
   .takimlar { padding-top: 24px; }
   .sinyal { grid-template-columns: 5.4rem minmax(0, 1fr); }
 }
+@media (max-width: 420px) {
+  .karne-toplam { display: none; }
+}
 @media (max-width: 380px) {
   .xg { min-width: 56px; }
   .skor { padding: 8px; }

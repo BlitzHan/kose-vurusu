@@ -10,13 +10,13 @@ Repo kökünden; yerel sunucu `python3 model/sunucu.py 8643` (siteyi sunar, ham 
    const t = await import('/model/topla.js?' + Date.now());
    await t.topla(MAC_ID, API_KOKU);
    ```
-3. `python3 model/analiz.py MAC_ID [MAC_ID ...]` → `data/tahminler.json`'a ekler ya da günceller (v2). Başlık ve özet elle yazılır; güncellemede korunur.
-4. Kesin 11 açıklanınca (~1 saat önce) 2. ve 3. adımı tekrarla.
+3. `python3 model/analiz.py MAC_ID [MAC_ID ...]` → `data/tahminler.json`'a ekler ya da günceller (v3). Başlık ve özet elle yazılır; güncellemede korunur.
+4. Kesin 11 açıklanınca (~1 saat önce) 2. ve 3. adımı tekrarla. **Atlanmaz:** muhtemel 11 22 Ekim'de 4/11 ve 5/11 tuttu.
 
 ## Maç sonrası
 
 1. `await t.sonuc(MAC_ID, API_KOKU)` → `ham/<id>-sonuc.json`
-2. Sonucu işle: skor, istatistik, goller, pazarların `olan` değeri, önerilerin Tuttu/Tutmadı durumu.
+2. `python3 model/isle.py MAC_ID [MAC_ID ...]` → skor, istatistik, goller, pazarların `olan` değeri, önerilerin Tuttu/Tutmadı durumu. Tahminlere dokunmaz.
 3. `python3 model/degerlendir.py` ve `python3 model/karsilastir.py`; bulgular `model/geri-bildirim-<tarih>.md`.
 
 Kaynak adı repoda, sitede ve commit mesajlarında geçmez.
