@@ -211,7 +211,7 @@
       <p class="bg">Beklenen gol: takım verisi <b>${ondalik(tb[0], 2)} – ${ondalik(tb[1], 2)}</b>, oyuncu formuyla <b>${ondalik(m.model.veri_l[0], 2)} – ${ondalik(m.model.veri_l[1], 2)}</b>${m.model.piyasa_l ? `, piyasa <b>${ondalik(m.model.piyasa_l[0], 2)} – ${ondalik(m.model.piyasa_l[1], 2)}</b>` : ''}. Kullanılan: <b>${ondalik(l[0], 2)} – ${ondalik(l[1], 2)}</b>${m.model.korner ? ` · beklenen korner <b>${ondalik(m.model.korner)}</b>, kart <b>${ondalik(m.model.kart)}</b>` : ''}.</p>
       <div class="matris" role="img" aria-label="Skor olasılıkları yüzde">${h}</div>
       <div class="matris-alt"><span>Satır: ${esc(kisa(m.ev.ad))} golü</span><span>Sütun: ${esc(kisa(m.dep.ad))} golü · %</span></div>
-      <p class="not">Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı. Yeşil satırlar seçilen sinyaller.</p>`;
+      <p class="not">Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; ${m.model.surum === 'v4' ? 'Güçlü için model en az %64, piyasa en az %60 olasılık vermeli' : 'Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı'}. Yeşil satırlar seçilen sinyaller.</p>`;
   }
 
   // ---------------------------------------------------------------- bilet

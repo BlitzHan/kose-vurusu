@@ -65,7 +65,8 @@ print()
 # 3) Beklenen gol: veri / piyasa / kullanılan, gerçek gol ve xG ile
 print('BEKLENEN GOL (takım başına)')
 hata = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])
-for m in biten:
+xgli = [m for m in biten if 'xg' in m['sonuc']['ist']]  # alt liglerde xG yok
+for m in xgli:
     s, md = m['sonuc'], m['model']
     gol = [int(x) for x in s['skor'].split('-')]
     xg = s['ist']['xg']
@@ -78,12 +79,12 @@ for m in biten:
             h[1] += md[k][i] - xg[i]
             h[2] += abs(md[k][i] - gol[i])
             h[3] += md[k][i] - gol[i]
-n = 2 * len(biten)
+n = 2 * len(xgli)
 for k, h in hata.items():
     print(f'  {k:9} xG\'ye göre ort. hata {h[0] / n:.2f} (yön {h[1] / n:+.2f})   gole göre {h[2] / n:.2f} (yön {h[3] / n:+.2f})')
-tg = sum(sum(int(x) for x in m['sonuc']['skor'].split('-')) for m in biten)
-txg = sum(sum(m['sonuc']['ist']['xg']) for m in biten)
-tl = sum(sum(m['model']['lambda']) for m in biten)
+tg = sum(sum(int(x) for x in m['sonuc']['skor'].split('-')) for m in xgli)
+txg = sum(sum(m['sonuc']['ist']['xg']) for m in xgli)
+tl = sum(sum(m['model']['lambda']) for m in xgli)
 print(f'  toplam: gol {tg}, xG {txg:.1f}, beklenen {tl:.1f}\n')
 
 # 4) Korner ve kart

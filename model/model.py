@@ -3,6 +3,7 @@
 v1: 21 Ekim 2026 maçlarında kullanılan sürüm (kayıtlı verilerden birebir geri çıkarıldı).
 v2: 21 Ekim sonuçlarından sonraki düzeltmeler (bkz. model/geri-bildirim-2026-10-21.md).
 v3: 22 Ekim sonuçlarından sonra (24 maç): piyasa payı, ilişkili öneri eleme, muhtemel 11'de form payı (bkz. geri-bildirim-2026-10-22.md).
+v4: 23 Ekim sonuçlarından sonra (33 maç): beklenen gol piyasadan, gol çizgilerinde piyasa olasılığı, yeni Güçlü, son 10 eşiği kalktı, korner/kart ortalaması (bkz. geri-bildirim-2026-10-23.md).
 """
 import math
 
@@ -18,8 +19,15 @@ SURUM = {
                kart_ort=3.8, kart_cekim=0.25, sayim_en_fazla='Orta'),
 }
 SURUM['v3'] = dict(SURUM['v2'], piyasa_agirlik=0.8, korelasyon=0.4, muhtemel_form=0.5)
-# v1/v2 için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı
-VARSAYILAN = dict(puan=dict(model=0.6, gecmis=0.25, piyasa=0.15), korelasyon=1.0, muhtemel_form=1.0)
+SURUM['v4'] = dict(SURUM['v3'], piyasa_agirlik=1.0, carpan_payi=0.25, ayar_payi=0.5, son10_esik=False,
+                   korner_ort=9.3, kart_ort=4.0, guclu=dict(model=0.64, piyasa=0.6, deger=(-0.08, 1.0)),
+                   pazar_piyasa={'Toplam gol': 0.75, 'Karşılıklı gol': 0.75})
+# Eski sürümler için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı,
+# piyasa beklentisine uygulanan form/eksik çarpanı ve elle ayar payı (v4), son 10 maç eşiği, Güçlü eşikleri,
+# gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4)
+VARSAYILAN = dict(puan=dict(model=0.6, gecmis=0.25, piyasa=0.15), korelasyon=1.0, muhtemel_form=1.0,
+                  carpan_payi=0.0, ayar_payi=0.0, son10_esik=True,
+                  guclu=dict(model=0.58, piyasa=0.5, deger=(-0.05, 0.15)), pazar_piyasa={})
 for _p in SURUM.values():
     for _k, _v in VARSAYILAN.items():
         _p.setdefault(_k, _v)
@@ -128,6 +136,9 @@ def beklenen_gol(md, onem, p, kesin=True):
     veri = [md['taban'][i] * car[i] for i in range(2)]
     w = p['piyasa_agirlik']
     lam = [veri[i] ** (1 - w) * md['piyasa_l'][i] ** w for i in range(2)]
+    # v4: piyasa beklentisi esas; oyuncu formu, eksikler ve elle ayar onu yalnız biraz oynatır
+    ayar = md.get('ayar') or [1.0, 1.0]
+    lam = [lam[i] * car[i] ** p['carpan_payi'] * ayar[i] ** p['ayar_payi'] for i in range(2)]
     return car, veri, lam
 
 
@@ -186,12 +197,15 @@ def korelasyon(a, b, M):
     return (exy - ex * ey) / math.sqrt(v) if v > 0 else 0.0
 
 
-def seviye(x, en_fazla):
+def seviye(x, en_fazla, p):
     if x['elendi'] or x['gecmis'] is None:  # son maçlarda sayılamayan pazar öneri olmaz
         return None
     m, g, pi, dg = x['model'], x['gecmis'], x['piyasa'], x['deger']
+    if not p['son10_esik']:  # v4: son 10 sıklığı isabeti öngörmedi; yalnız puanda ve bilette kalır
+        g = 1.0
+    G = p['guclu']  # v4: Güçlü = model ve piyasa birlikte yüksek olasılık veriyor (değer aranmaz)
     s = None
-    if m >= 0.58 and g >= 0.55 and pi >= 0.5 and -0.05 <= dg <= 0.15:
+    if m >= G['model'] and g >= 0.55 and pi >= G['piyasa'] and G['deger'][0] <= dg <= G['deger'][1]:
         s = 'Güçlü'
     elif m >= 0.54 and g >= 0.5 and -0.08 <= dg <= 0.3:
         s = 'Orta'
@@ -200,7 +214,7 @@ def seviye(x, en_fazla):
     return s
 
 
-def hesapla(m, surum='v3', ham=None):
+def hesapla(m, surum='v4', ham=None):
     """Bir maçın model bloğunu ve önerilerini yeniden hesaplar (m yerinde değişir).
 
     ham: korner/kart için takım ortalamasından gelen ham beklenti; verilmezse m['model']['ham'] ya da mevcut değer.
@@ -231,11 +245,14 @@ def hesapla(m, surum='v3', ham=None):
             v = u if k[4] == 'U' else 1 - u
         else:
             v = P[k]
+        w = p['pazar_piyasa'].get(x['grup'])  # v4: gol çizgilerinin kuyruğunu piyasa iki parametreli Poisson'dan iyi biliyor
+        if w and x['piyasa'] is not None:
+            v = (1 - w) * v + w * x['piyasa']
         x['model'] = round(v, 3)
         var = [a for a in p['puan'] if x[a] is not None]  # geçmiş yoksa kalan ağırlıklarla
         x['puan'] = round(sum(p['puan'][a] * x[a] for a in var) / sum(p['puan'][a] for a in var), 3)
         x['deger'] = round(x['model'] * x['oran'] - 1, 3)
-        x['seviye'] = seviye(x, p['sayim_en_fazla'] if k.startswith(('KOR', 'KART')) else 'Güçlü')
+        x['seviye'] = seviye(x, p['sayim_en_fazla'] if k.startswith(('KOR', 'KART')) else 'Güçlü', p)
     aday = sorted([x for x in md['pazarlar'] if x['seviye']], key=lambda x: (x['seviye'] != 'Güçlü', -x['puan']))
     sec, gruplar = [], set()
     for x in aday:
