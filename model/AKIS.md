@@ -11,7 +11,7 @@ Repo kökünden; yerel sunucu `python3 model/sunucu.py 8643` (siteyi sunar, ham 
    await t.topla(MAC_ID, API_KOKU);
    ```
 3. `python3 model/analiz.py MAC_ID [MAC_ID ...]` → `data/tahminler.json`'a ekler ya da günceller (v5). Başlık ve özet elle yazılır; güncellemede korunur.
-4. Kesin 11 açıklanınca (~1 saat önce) 2. ve 3. adımı tekrarla. **Atlanmaz:** muhtemel 11 22 Ekim'de 4/11 ve 5/11 tuttu.
+4. Kesin 11 güncellemesi **yalnız kullanıcı isterse** yapılır; ajan kendiliğinden yapmaz, teklif de etmez. İstenirse kesin 11 açıklanınca (~1 saat önce) 2. ve 3. adımı tekrarla.
 
 ## Maç sonrası
 
