@@ -4,6 +4,7 @@ v1: 21 Ekim 2026 maçlarında kullanılan sürüm (kayıtlı verilerden birebir 
 v2: 21 Ekim sonuçlarından sonraki düzeltmeler (bkz. model/geri-bildirim-2026-10-21.md).
 v3: 22 Ekim sonuçlarından sonra (24 maç): piyasa payı, ilişkili öneri eleme, muhtemel 11'de form payı (bkz. geri-bildirim-2026-10-22.md).
 v4: 23 Ekim sonuçlarından sonra (33 maç): beklenen gol piyasadan, gol çizgilerinde piyasa olasılığı, yeni Güçlü, son 10 eşiği kalktı, korner/kart ortalaması (bkz. geri-bildirim-2026-10-23.md).
+v5: 24 Ekim sonuçlarından sonra (55 maç): kart ortalaması 4,4, kart olasılığının %75'i piyasadan (bkz. geri-bildirim-2026-10-24.md).
 """
 import math
 
@@ -22,6 +23,7 @@ SURUM['v3'] = dict(SURUM['v2'], piyasa_agirlik=0.8, korelasyon=0.4, muhtemel_for
 SURUM['v4'] = dict(SURUM['v3'], piyasa_agirlik=1.0, carpan_payi=0.25, ayar_payi=0.5, son10_esik=False,
                    korner_ort=9.3, kart_ort=4.0, guclu=dict(model=0.64, piyasa=0.6, deger=(-0.08, 1.0)),
                    pazar_piyasa={'Toplam gol': 0.75, 'Karşılıklı gol': 0.75})
+SURUM['v5'] = dict(SURUM['v4'], kart_ort=4.4, pazar_piyasa=dict(SURUM['v4']['pazar_piyasa'], Kart=0.75))
 # Eski sürümler için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı,
 # piyasa beklentisine uygulanan form/eksik çarpanı ve elle ayar payı (v4), son 10 maç eşiği, Güçlü eşikleri,
 # gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4)
@@ -214,7 +216,7 @@ def seviye(x, en_fazla, p):
     return s
 
 
-def hesapla(m, surum='v4', ham=None):
+def hesapla(m, surum='v5', ham=None):
     """Bir maçın model bloğunu ve önerilerini yeniden hesaplar (m yerinde değişir).
 
     ham: korner/kart için takım ortalamasından gelen ham beklenti; verilmezse m['model']['ham'] ya da mevcut değer.
@@ -245,7 +247,7 @@ def hesapla(m, surum='v4', ham=None):
             v = u if k[4] == 'U' else 1 - u
         else:
             v = P[k]
-        w = p['pazar_piyasa'].get(x['grup'])  # v4: gol çizgilerinin kuyruğunu piyasa iki parametreli Poisson'dan iyi biliyor
+        w = p['pazar_piyasa'].get(x['grup'])  # v4: gol çizgilerinin kuyruğunu piyasa iki parametreli Poisson'dan iyi biliyor; v5: kartta da
         if w and x['piyasa'] is not None:
             v = (1 - w) * v + w * x['piyasa']
         x['model'] = round(v, 3)

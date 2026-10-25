@@ -46,10 +46,26 @@
 5. **Gol yine fazla.** 71 gol, xG 62,7 (maç başı 3,2). Yine de 3,5 alt önerileri 9/12 tuttu; gol fazlası birkaç maçta toplandı (Westerlo 4–4, Willem II 1–6, Napoli 3–3).
 6. **Kadrolar yine muhtemel 11.** Samsunspor 5/10, Sassuolo 4/11, La Louvière 6/11; kesin 11 güncellemesi bu gün de yapılmadı.
 
-## Öneri (uygulanmadı)
+## Değişenler (model v5)
 
-- Kartta model piyasadan belirgin kötü: kart olasılığını korner/gol gibi piyasaya yaklaştırmak ya da kart pazarını öneriden çıkarmak düşünülebilir. Kart ortalamasını 4,0 → ~4,4.
-- Korner için karar vermeden bir gün daha bak; 55 maçlık ortalama sapma sıfıra yakın.
-- Güçlü/Orta ayrımı ilk kez anlamlı çalıştı; dokunma.
+Kod: `model/model.py`. v1–v4 kayıtlı tahminleri birebir üretmeye devam ediyor; yeni maçlar v5 ile hesaplanır.
 
-Bu değişiklikler yapılmadı; model hâlâ v4.
+| | v4 | v5 | Neden |
+|---|---|---|---|
+| Kart ortalaması | 4,0 | 4,4 | Madde 2; 55 maçta kart her gün eksik tahmin edildi |
+| Kart olasılığı | takım ortalamasından | %25 model · %75 piyasanın olasılığı | Madde 2; gol pazarlarıyla aynı mantık |
+
+Kart ortalaması 4,0–4,6 ve piyasa payı %0–100 denendi. Tam piyasa kart Brier'de en iyi (0,246) ama kart önerilerini neredeyse siliyor; %75 ile 0,247.
+
+| | v4 | v5 |
+|---|---|---|
+| Brier, 55 maç | 0,2342 | **0,2325** |
+| Kart, 55 maç | 0,269 | 0,247 |
+| Brier, yalnız 24 Ekim | 0,2400 | 0,2356 (piyasa 0,235) |
+| Öneri, yalnız 24 Ekim | 37/61 | 37/59 |
+
+Korner ve Güçlü/Orta eşiklerine dokunulmadı. Uyarı: ayar 55 maça bakılarak seçildi; kart için 82 pazar az, gerçek sınav sonraki günler.
+
+## Sitede
+
+Üst karne artık dört blok: Sinyal (toplam) · Güçlü · Orta · Skor. Telefonda başlığın altında ayrı satır.

@@ -10,7 +10,7 @@ Repo kökünden; yerel sunucu `python3 model/sunucu.py 8643` (siteyi sunar, ham 
    const t = await import('/model/topla.js?' + Date.now());
    await t.topla(MAC_ID, API_KOKU);
    ```
-3. `python3 model/analiz.py MAC_ID [MAC_ID ...]` → `data/tahminler.json`'a ekler ya da günceller (v4). Başlık ve özet elle yazılır; güncellemede korunur.
+3. `python3 model/analiz.py MAC_ID [MAC_ID ...]` → `data/tahminler.json`'a ekler ya da günceller (v5). Başlık ve özet elle yazılır; güncellemede korunur.
 4. Kesin 11 açıklanınca (~1 saat önce) 2. ve 3. adımı tekrarla. **Atlanmaz:** muhtemel 11 22 Ekim'de 4/11 ve 5/11 tuttu.
 
 ## Maç sonrası

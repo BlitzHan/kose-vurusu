@@ -93,9 +93,12 @@ button, select { font: inherit; color: inherit; }
   padding: 7px 28px 7px 10px; font-size: 13.5px; font-weight: 600; max-width: 42vw; cursor: pointer;
 }
 .gun-sec option { color: #111; }
-.karne { color: var(--ust-yazi); font-size: 12px; font-weight: 600; line-height: 1.15; text-align: right; font-stretch: 85%; white-space: nowrap; }
+.karne { display: flex; gap: 12px; color: var(--ust-yazi); font-size: 12px; font-weight: 600; line-height: 1.15; text-align: right; font-stretch: 85%; white-space: nowrap; }
+.karne-blok { display: block; }
+.karne-blok + .karne-blok { padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, .18); }
 .karne b { font-size: 15px; font-weight: 800; font-stretch: 100%; }
 .karne small { display: block; opacity: .72; font-weight: 500; }
+.karne-blok.guclu small:first-child { opacity: 1; color: #8fe0a8; font-weight: 700; }
 
 /* ---------------------------------------------------------------- sayfa */
 .sayfa { max-width: 760px; margin: 0 auto; padding: 20px 16px 28px; }
@@ -360,6 +363,12 @@ tfoot td:first-child { background: var(--bilet); }
   .tablo-kap { margin: 0 -26px; padding: 0 26px; }
   .takimlar { padding-top: 24px; }
   .sinyal { grid-template-columns: 5.4rem minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .ust-ic { flex-wrap: wrap; row-gap: 8px; }
+  .ust-sag { display: contents; }
+  .karne { order: 3; width: 100%; justify-content: space-between; text-align: left; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+  .karne-blok + .karne-blok { padding-left: 0; border-left: 0; }
 }
 @media (max-width: 420px) {
   .karne-toplam { display: none; }

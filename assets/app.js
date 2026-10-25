@@ -28,20 +28,31 @@
   };
 
   // ---------------------------------------------------------------- karne
-  // Seçili günün sinyal ve skor isabeti; altında tüm günlerin oranı (gelişimi görmek için).
-  function sayim(maclar) {
+  // Seçili günün sinyal isabeti (toplam, Güçlü, Orta) ve skor isabeti; toplamın altında tüm günlerin oranı.
+  function sayim(maclar, seviye) {
     const biten = maclar.filter((m) => m.sonuc && m.sonuc.isabet);
-    const sec = biten.flatMap((m) => m.sonuc.isabet.oneriler || []).filter((o) => o.tuttu != null);
+    const sec = biten.flatMap((m) => {
+      const sv = Object.fromEntries(m.oneriler.map((o) => [o.kod, o.seviye]));
+      return (m.sonuc.isabet.oneriler || []).filter((o) => o.tuttu != null && (!seviye || sv[o.kod] === seviye));
+    });
     return { mac: biten.length, sec: sec.length, tut: sec.filter((o) => o.tuttu).length, skor: biten.filter((m) => m.sonuc.isabet.skor).length };
   }
   const oran = (s) => (s.sec ? '%' + Math.round((s.tut / s.sec) * 100) : '–');
+  const blok = (ad, tut, say, alt, sinif = '') =>
+    `<span class="karne-blok ${sinif}"><small>${ad}</small><b>${tut}/${say}</b><small>${alt}</small></span>`;
 
   function karne(gun) {
-    const g = sayim(veri.maclar.filter((m) => m.tarih === gun));
+    const gm = veri.maclar.filter((m) => m.tarih === gun);
+    const g = sayim(gm);
     const t = sayim(veri.maclar);
-    const toplam = t.sec ? `toplam ${oran(t)}` : '';
-    if (!g.mac) return `<small>Bu gün</small><b>bekleniyor</b><small>${toplam}</small>`;
-    return `<small>Sinyal · skor</small><b>${g.tut}/${g.sec}</b> · <b>${g.skor}/${g.mac}</b><small>${oran(g)} isabet<span class="karne-toplam"> · ${toplam}</span></small>`;
+    const toplam = t.sec ? `tümü ${oran(t)}` : '';
+    if (!g.mac) return `<span class="karne-blok"><small>Bu gün</small><b>bekleniyor</b><small>${toplam}</small></span>`;
+    const G = sayim(gm, 'Güçlü');
+    const O = sayim(gm, 'Orta');
+    return blok('Sinyal', g.tut, g.sec, `${oran(g)}<span class="karne-toplam"> · ${toplam}</span>`)
+      + blok('Güçlü', G.tut, G.sec, oran(G), 'guclu')
+      + blok('Orta', O.tut, O.sec, oran(O))
+      + blok('Skor', g.skor, g.mac, oran({ tut: g.skor, sec: g.mac }), 'karne-skor');
   }
 
   // ---------------------------------------------------------------- bilet gövdesi
