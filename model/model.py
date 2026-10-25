@@ -164,7 +164,7 @@ def olasiliklar(l1, l2, p):
     P['DNB2'] = 1 - P['DNB1']
     P['KGV'] = ara(M, lambda i, j: i > 0 and j > 0)
     P['KGY'] = 1 - P['KGV']
-    for t in [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]:
+    for t in [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5]:
         P[f'GOLU{t}'] = ara(M, lambda i, j: i + j > t)
         P[f'GOLA{t}'] = 1 - P[f'GOLU{t}']
     P['ILKYOK'] = M[0][0]
