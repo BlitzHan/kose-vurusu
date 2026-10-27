@@ -201,7 +201,7 @@ def onem(h, taraf, avrupa_ad):
 
 
 # ---------------------------------------------------------------- maç kaydı
-def kayit(h, eski=None, surum='v5'):
+def kayit(h, eski=None, surum='v6'):
     mac = h['mac']
     ev, dep = AD.get(mac['ev']['ad'], mac['ev']['ad']), AD.get(mac['dep']['ad'], mac['dep']['ad'])
     avrupa = tr(mac['ut_ad'])
@@ -273,7 +273,7 @@ def slug(ad):
 
 if __name__ == '__main__':
     argv = [a for a in sys.argv[1:] if not a.startswith('--')]
-    surum = sys.argv[sys.argv.index('--surum') + 1] if '--surum' in sys.argv else 'v5'
+    surum = sys.argv[sys.argv.index('--surum') + 1] if '--surum' in sys.argv else 'v6'
     argv = [a for a in argv if a != surum]
     yol = os.path.join(KOK, 'data', 'tahminler.json')
     d = json.load(open(yol))

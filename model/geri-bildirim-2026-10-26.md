@@ -31,6 +31,14 @@ Not: sonuçlar maç sayfalarından okundu; oyuncu reytingleri yok (`r: null`). K
 5. **Derbide kart patladı.** Galatasaray – Fenerbahçe 11 kart; bu maçta kart önerisi yoktu.
 6. **Kadroların hepsi muhtemel 11'di**; kesin 11 güncellemesi yapılmadı.
 
-## Değişenler
+## Değişenler: model v6
 
-Model değişmedi (v5). Korner kararı için 5 günlük veri var: korner önerilerini Güçlü'den çıkarmak ya da korneri piyasaya daha çok yaslamak masada.
+89 maçlık örnekle üç değişiklik. Biten maçların tahminleri değişmedi; v6 bundan sonraki maçlarda kullanılacak.
+
+1. **Orta için piyasa en az %55.** v5 ile 89 maç baştan hesaplandığında Orta 77/138 (%56) tuttu, piyasanın beklentisi 77,6'ydı; yani piyasadan bir farkı yoktu. Piyasa %55'in altındayken Orta 27/58 tuttu, üstündeyken 50/80. Eşikle Orta 61/97 (%63; piyasa 57,2). Güçlü değişmedi (84/105, %80).
+2. **Korner olasılığının %75'i piyasadan.** Kartta işe yaramıştı. Korner Brier 0,249'dan 0,247'ye iniyor; küçük ama doğru yönde.
+3. **Öne çıkan skor en olası sonucun içinden.** Model en olası tek skor olarak 89 maçın 63'ünde 1-1 verdi; gerçekte yalnız 6 maç 1-1 bitti. Artık önce en olası sonuç (ev / beraberlik / deplasman), sonra onun en olası skoru seçiliyor. 89 maçta 1. skor isabeti 11'den 13'e çıkıyor ve skor, sinyallerle aynı yöne bakıyor. Uyarı: tek skor tutturmanın tavanı %10–12; buradan büyük sıçrama beklenmemeli.
+
+Toplam (89 maç, v5 → v6): öneri 161/243 (%66) → 145/202 (%72); Brier 0,2318 → 0,2316.
+
+Not: eşikler aynı veriden seçildi; gerçek sınav sonraki günler. %58 eşiği %57'ye düşürüyor, yani sonuç gürültülü; 30 maç sonra yeniden bakılacak.

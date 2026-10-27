@@ -5,6 +5,8 @@ v2: 21 Ekim sonuçlarından sonraki düzeltmeler (bkz. model/geri-bildirim-2026-
 v3: 22 Ekim sonuçlarından sonra (24 maç): piyasa payı, ilişkili öneri eleme, muhtemel 11'de form payı (bkz. geri-bildirim-2026-10-22.md).
 v4: 23 Ekim sonuçlarından sonra (33 maç): beklenen gol piyasadan, gol çizgilerinde piyasa olasılığı, yeni Güçlü, son 10 eşiği kalktı, korner/kart ortalaması (bkz. geri-bildirim-2026-10-23.md).
 v5: 24 Ekim sonuçlarından sonra (55 maç): kart ortalaması 4,4, kart olasılığının %75'i piyasadan (bkz. geri-bildirim-2026-10-24.md).
+v6: 26 Ekim sonuçlarından sonra (89 maç): Orta için piyasa en az %55, korner olasılığının %75'i piyasadan,
+    öne çıkan skor en olası sonucun (1/X/2) içinden (bkz. geri-bildirim-2026-10-26.md).
 """
 import math
 
@@ -24,12 +26,15 @@ SURUM['v4'] = dict(SURUM['v3'], piyasa_agirlik=1.0, carpan_payi=0.25, ayar_payi=
                    korner_ort=9.3, kart_ort=4.0, guclu=dict(model=0.64, piyasa=0.6, deger=(-0.08, 1.0)),
                    pazar_piyasa={'Toplam gol': 0.75, 'Karşılıklı gol': 0.75})
 SURUM['v5'] = dict(SURUM['v4'], kart_ort=4.4, pazar_piyasa=dict(SURUM['v4']['pazar_piyasa'], Kart=0.75))
+SURUM['v6'] = dict(SURUM['v5'], orta=dict(model=0.54, piyasa=0.55), skor='tutarli',
+                   pazar_piyasa=dict(SURUM['v5']['pazar_piyasa'], Korner=0.75))
 # Eski sürümler için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı,
 # piyasa beklentisine uygulanan form/eksik çarpanı ve elle ayar payı (v4), son 10 maç eşiği, Güçlü eşikleri,
-# gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4)
+# gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4), Orta eşikleri ve öne çıkan skorun seçimi (v6)
 VARSAYILAN = dict(puan=dict(model=0.6, gecmis=0.25, piyasa=0.15), korelasyon=1.0, muhtemel_form=1.0,
                   carpan_payi=0.0, ayar_payi=0.0, son10_esik=True,
-                  guclu=dict(model=0.58, piyasa=0.5, deger=(-0.05, 0.15)), pazar_piyasa={})
+                  guclu=dict(model=0.58, piyasa=0.5, deger=(-0.05, 0.15)), pazar_piyasa={},
+                  orta=dict(model=0.54, piyasa=0.0), skor='en_olasi')
 for _p in SURUM.values():
     for _k, _v in VARSAYILAN.items():
         _p.setdefault(_k, _v)
@@ -209,14 +214,14 @@ def seviye(x, en_fazla, p):
     s = None
     if m >= G['model'] and g >= 0.55 and pi >= G['piyasa'] and G['deger'][0] <= dg <= G['deger'][1]:
         s = 'Güçlü'
-    elif m >= 0.54 and g >= 0.5 and -0.08 <= dg <= 0.3:
-        s = 'Orta'
+    elif m >= p['orta']['model'] and (pi or 0) >= p['orta']['piyasa'] and g >= 0.5 and -0.08 <= dg <= 0.3:
+        s = 'Orta'  # v6: piyasa %55'in altındayken Orta yazı-turaydı (89 maçta 27/58)
     if s == 'Güçlü' and en_fazla == 'Orta':
         s = 'Orta'
     return s
 
 
-def hesapla(m, surum='v5', ham=None):
+def hesapla(m, surum='v6', ham=None):
     """Bir maçın model bloğunu ve önerilerini yeniden hesaplar (m yerinde değişir).
 
     ham: korner/kart için takım ortalamasından gelen ham beklenti; verilmezse m['model']['ham'] ya da mevcut değer.
@@ -233,8 +238,13 @@ def hesapla(m, surum='v5', ham=None):
     md['kart'] = round(sayim(ham['kart'], p['kart_ort'], p['kart_cekim']), 1)
     M, P = olasiliklar(lam[0], lam[1], p)
     md['matris'] = [[round(M[i][j], 3) for j in range(6)] for i in range(6)]
-    sk = sorted(((f'{i}-{j}', M[i][j]) for i in range(N) for j in range(N)), key=lambda x: -x[1])[:5]
-    md['skorlar'] = [[a, round(b, 3)] for a, b in sk]
+    sk = sorted(((f'{i}-{j}', M[i][j]) for i in range(N) for j in range(N)), key=lambda x: -x[1])
+    if p['skor'] == 'tutarli':  # v6: en olası skor neredeyse hep 1-1'di; önce en olası sonuç, sonra onun en olası skoru
+        yon = max(('MS1', 'MSX', 'MS2'), key=lambda k: P[k])
+        uyar = {'MS1': lambda i, j: i > j, 'MSX': lambda i, j: i == j, 'MS2': lambda i, j: i < j}[yon]
+        bas = next(x for x in sk if uyar(*map(int, x[0].split('-'))))
+        sk = [bas] + [x for x in sk if x is not bas]
+    md['skorlar'] = [[a, round(b, 3)] for a, b in sk[:5]]
     for x in md['pazarlar']:
         k = x['kod']
         if k.startswith('AH'):
