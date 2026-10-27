@@ -26,7 +26,7 @@ Not: sonuçlar maç sayfalarından okundu; oyuncu reytingleri yok (`r: null`). K
 
 1. **Genel tablo piyasayla başa baş.** 96 pazarda Brier: v5 0,221 · piyasa 0,223. İlk gol (0,175 · 0,183) ve kart (0,234 · 0,242) önde, maç sonucu ve toplam gol eşit.
 2. **Korner yine geride.** Korner Brier 0,254 · piyasa 0,248; beşinci günde de en zayıf grup. Tek korner önerisi (Galatasaray maçı 9,5 alt) 14 kornerle tutmadı.
-3. **Favorinin 2–0'ı "2,5 üst"ü bozdu.** Beşiktaş ve PSG maçında model 2,4–2,5 gol bekledi, ikisi de 2–0 bitti. PSG'de xG 0,96'da kaldı; Beşiktaş'ta 1,94 ama rakip hiç üretmedi (0,43).
+3. **Favorinin 2–0'ı "2,5 üst"ü bozdu.** Beşiktaş ve PSG maçında model toplam 3,4–3,5 gol bekledi (ev sahibi tek başına 2,4–2,5), ikisi de 2–0 bitti. PSG'de xG 0,96'da kaldı; Beşiktaş'ta 1,94 ama rakip hiç üretmedi (0,43).
 4. **Rizespor 3–4 sürpriz.** İlk yarı 2–0 Rizespor; Trabzonspor ikinci yarıda 4 gol attı. Taraf (Trabzonspor iade) doğru, 3,5 alt doğal olarak gitti.
 5. **Derbide kart patladı.** Galatasaray – Fenerbahçe 11 kart; bu maçta kart önerisi yoktu.
 6. **Kadroların hepsi muhtemel 11'di**; kesin 11 güncellemesi yapılmadı.
