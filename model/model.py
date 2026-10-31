@@ -28,13 +28,16 @@ SURUM['v4'] = dict(SURUM['v3'], piyasa_agirlik=1.0, carpan_payi=0.25, ayar_payi=
 SURUM['v5'] = dict(SURUM['v4'], kart_ort=4.4, pazar_piyasa=dict(SURUM['v4']['pazar_piyasa'], Kart=0.75))
 SURUM['v6'] = dict(SURUM['v5'], orta=dict(model=0.54, piyasa=0.55), skor='tutarli',
                    pazar_piyasa=dict(SURUM['v5']['pazar_piyasa'], Korner=0.75))
+# v6.5 (31 Ekim): seçim olasılıktan değere döndü. 122 maçta model piyasadan %8+ yüksek gördüğünde oran kapanışa kadar
+# ortalama %3,5 modelin yönüne gitti (taban %0,2); %5+ için %2,4. Korner, kart ve Asya handikabı dışarıda, oran 1,60–3,50.
+SURUM['v6.5'] = dict(SURUM['v6'], secim='deger', ayrisma=dict(guclu=0.08, orta=0.05), oran_aralik=(1.6, 3.5))
 # Eski sürümler için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı,
 # piyasa beklentisine uygulanan form/eksik çarpanı ve elle ayar payı (v4), son 10 maç eşiği, Güçlü eşikleri,
 # gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4), Orta eşikleri ve öne çıkan skorun seçimi (v6)
 VARSAYILAN = dict(puan=dict(model=0.6, gecmis=0.25, piyasa=0.15), korelasyon=1.0, muhtemel_form=1.0,
                   carpan_payi=0.0, ayar_payi=0.0, son10_esik=True,
                   guclu=dict(model=0.58, piyasa=0.5, deger=(-0.05, 0.15)), pazar_piyasa={},
-                  orta=dict(model=0.54, piyasa=0.0), skor='en_olasi')
+                  orta=dict(model=0.54, piyasa=0.0), skor='en_olasi', secim='olasilik')
 for _p in SURUM.values():
     for _k, _v in VARSAYILAN.items():
         _p.setdefault(_k, _v)
@@ -208,6 +211,13 @@ def seviye(x, en_fazla, p):
     if x['elendi'] or x['gecmis'] is None:  # son maçlarda sayılamayan pazar öneri olmaz
         return None
     m, g, pi, dg = x['model'], x['gecmis'], x['piyasa'], x['deger']
+    if p['secim'] == 'deger':  # v6.5: model piyasanın ima ettiği olasılıktan belirgin yüksekse öneri
+        alt, ust_ = p['oran_aralik']
+        # Asya handikabında sinyal yok (kapanışa göre +%0,2): Poisson'un ince kuyruğundan gelen yapısal sapma
+        if x['grup'] in ('Korner', 'Kart') or x['kod'].startswith('AH') or not pi or not alt <= x['oran'] <= ust_:
+            return None
+        a = m / pi - 1
+        return 'Güçlü' if a >= p['ayrisma']['guclu'] else 'Orta' if a >= p['ayrisma']['orta'] else None
     if not p['son10_esik']:  # v4: son 10 sıklığı isabeti öngörmedi; yalnız puanda ve bilette kalır
         g = 1.0
     G = p['guclu']  # v4: Güçlü = model ve piyasa birlikte yüksek olasılık veriyor (değer aranmaz)
@@ -264,8 +274,10 @@ def hesapla(m, surum='v6', ham=None):
         var = [a for a in p['puan'] if x[a] is not None]  # geçmiş yoksa kalan ağırlıklarla
         x['puan'] = round(sum(p['puan'][a] * x[a] for a in var) / sum(p['puan'][a] for a in var), 3)
         x['deger'] = round(x['model'] * x['oran'] - 1, 3)
+        x['ayrisma'] = round(x['model'] / x['piyasa'] - 1, 3) if x['piyasa'] else None
         x['seviye'] = seviye(x, p['sayim_en_fazla'] if k.startswith(('KOR', 'KART')) else 'Güçlü', p)
-    aday = sorted([x for x in md['pazarlar'] if x['seviye']], key=lambda x: (x['seviye'] != 'Güçlü', -x['puan']))
+    sira = (lambda x: -x['ayrisma']) if p['secim'] == 'deger' else (lambda x: -x['puan'])
+    aday = sorted([x for x in md['pazarlar'] if x['seviye']], key=lambda x: (x['seviye'] != 'Güçlü', sira(x)))
     sec, gruplar = [], set()
     for x in aday:
         if x['grup'] in gruplar or any(korelasyon(x['kod'], y['kod'], M) > p['korelasyon'] for y in sec):
@@ -274,7 +286,7 @@ def hesapla(m, surum='v6', ham=None):
         sec.append(x)
         if len(sec) == 3:
             break
-    alan = ['kod', 'ad', 'grup', 'oran', 'seviye', 'puan', 'model', 'gecmis', 'gecmis_ev', 'gecmis_dep', 'piyasa', 'deger']
+    alan = ['kod', 'ad', 'grup', 'oran', 'seviye', 'puan', 'model', 'gecmis', 'gecmis_ev', 'gecmis_dep', 'piyasa', 'deger', 'ayrisma']
     m['oneriler'] = [{a: x[a] for a in alan} for x in sec]
     m['sinyal'] = 'guclu' if any(x['seviye'] == 'Güçlü' for x in sec) else ('orta' if sec else 'zayif')
     md['surum'] = surum

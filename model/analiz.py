@@ -102,37 +102,42 @@ def pazarlar(oranlar, ev, dep):
             out.append({'kod': kod, 'ad': ad, 'oran': o, 'piyasa': round((1 / o) / top * hedef, 3)})
 
     for p in oranlar or []:
-        c = {n: ondalik(f) for n, f in p['secenekler']}
-        ad, g = p['pazar'], p['grup']
-        if ad == 'Full time':
-            ekle('MS', [('MS1', f'{ev} kazanır', c['1']), ('MSX', 'Beraberlik', c['X']), ('MS2', f'{dep} kazanır', c['2'])])
-        elif ad == 'Double chance':
-            ekle('CIFT', [('CS1X', f'{ev} kaybetmez', c['1X']), ('CSX2', f'{dep} kaybetmez', c['X2']), ('CS12', 'Beraberlik olmaz', c['12'])])
-        elif ad == '1st half':
-            ekle('IY', [('IY1', f'İlk yarı {ev}', c['1']), ('IYX', 'İlk yarı beraberlik', c['X']), ('IY2', f'İlk yarı {dep}', c['2'])])
-        elif ad == 'Draw no bet':
-            ekle('DNB', [('DNB1', f'{ev} kazanır (iade)', c['1']), ('DNB2', f'{dep} kazanır (iade)', c['2'])])
-        elif ad == 'Both teams to score':
-            ekle('KG', [('KGV', 'Karşılıklı gol var', c['Yes']), ('KGY', 'Karşılıklı gol yok', c['No'])])
-        elif ad == 'Match goals':
-            t = str(g).replace('.', ',')
-            ekle('G', [(f'GOLU{g}', f'{t} gol üst', c['Over']), (f'GOLA{g}', f'{t} gol alt', c['Under'])])
-        elif ad == 'Asian handicap':
-            (n1, o1), (n2, o2) = p['secenekler']
-            h1 = float(n1.split(')')[0].strip('('))
-            fmt = lambda h: ('+' if h > 0 else '') + (str(int(h)) if h == int(h) else str(h)).replace('.', ',')
-            k = lambda h: ('+' if h > 0 else '') + (str(int(h)) if h == int(h) else str(h))
-            ekle('AH', [(f'AH1{k(h1)}', f'{ev} {fmt(h1)} handikap', ondalik(o1)), (f'AH2{k(-h1)}', f'{dep} {fmt(-h1)} handikap', ondalik(o2))])
-        elif ad == 'Cards in match':
-            t = str(g).replace('.', ',')
-            ekle('K', [(f'KARTU{g}', f'Kart {t} üst', c['Over']), (f'KARTA{g}', f'Kart {t} alt', c['Under'])])
-        elif ad == 'Corners 2-Way':
-            t = str(g).replace('.', ',')
-            ekle('KR', [(f'KORU{g}', f'Korner {t} üst', c['Over']), (f'KORA{g}', f'Korner {t} alt', c['Under'])])
-        elif ad == 'First team to score':
-            n = [x for x, _ in p['secenekler']]
-            evk = next(x for x in n if x not in ('No goal',) and x == n[0])
-            ekle('ILK', [('ILK1', f'İlk golü {ev} atar', c[evk]), ('ILKYOK', 'Gol olmaz', c['No goal']), ('ILK2', f'İlk golü {dep} atar', c[n[-1]])])
+        n0 = len(out)
+        try:
+            c = {n: ondalik(f) for n, f in p['secenekler']}
+            ad, g = p['pazar'], p['grup']
+            if ad == 'Full time':
+                ekle('MS', [('MS1', f'{ev} kazanır', c['1']), ('MSX', 'Beraberlik', c['X']), ('MS2', f'{dep} kazanır', c['2'])])
+            elif ad == 'Double chance':
+                ekle('CIFT', [('CS1X', f'{ev} kaybetmez', c['1X']), ('CSX2', f'{dep} kaybetmez', c['X2']), ('CS12', 'Beraberlik olmaz', c['12'])])
+            elif ad == '1st half':
+                ekle('IY', [('IY1', f'İlk yarı {ev}', c['1']), ('IYX', 'İlk yarı beraberlik', c['X']), ('IY2', f'İlk yarı {dep}', c['2'])])
+            elif ad == 'Draw no bet':
+                ekle('DNB', [('DNB1', f'{ev} kazanır (iade)', c['1']), ('DNB2', f'{dep} kazanır (iade)', c['2'])])
+            elif ad == 'Both teams to score':
+                ekle('KG', [('KGV', 'Karşılıklı gol var', c['Yes']), ('KGY', 'Karşılıklı gol yok', c['No'])])
+            elif ad == 'Match goals':
+                t = str(g).replace('.', ',')
+                ekle('G', [(f'GOLU{g}', f'{t} gol üst', c['Over']), (f'GOLA{g}', f'{t} gol alt', c['Under'])])
+            elif ad == 'Asian handicap':
+                (n1, o1), (n2, o2) = p['secenekler']
+                h1 = float(n1.split(')')[0].strip('('))
+                fmt = lambda h: ('+' if h > 0 else '') + (str(int(h)) if h == int(h) else str(h)).replace('.', ',')
+                k = lambda h: ('+' if h > 0 else '') + (str(int(h)) if h == int(h) else str(h))
+                ekle('AH', [(f'AH1{k(h1)}', f'{ev} {fmt(h1)} handikap', ondalik(o1)), (f'AH2{k(-h1)}', f'{dep} {fmt(-h1)} handikap', ondalik(o2))])
+            elif ad == 'Cards in match':
+                t = str(g).replace('.', ',')
+                ekle('K', [(f'KARTU{g}', f'Kart {t} üst', c['Over']), (f'KARTA{g}', f'Kart {t} alt', c['Under'])])
+            elif ad == 'Corners 2-Way':
+                t = str(g).replace('.', ',')
+                ekle('KR', [(f'KORU{g}', f'Korner {t} üst', c['Over']), (f'KORA{g}', f'Korner {t} alt', c['Under'])])
+            elif ad == 'First team to score':
+                n = [x for x, _ in p['secenekler']]
+                evk = next(x for x in n if x not in ('No goal',) and x == n[0])
+                ekle('ILK', [('ILK1', f'İlk golü {ev} atar', c[evk]), ('ILKYOK', 'Gol olmaz', c['No goal']), ('ILK2', f'İlk golü {dep} atar', c[n[-1]])])
+        except (KeyError, ValueError, StopIteration):  # kapalı ya da eksik seçenekli pazar atlanır
+            del out[n0:]
+
     GRUP = {'MS': 'Maç sonucu', 'CS': 'Maç sonucu', 'DN': 'Maç sonucu', 'AH': 'Maç sonucu', 'IY': 'İlk yarı', 'KG': 'Karşılıklı gol',
             'GO': 'Toplam gol', 'KA': 'Kart', 'KO': 'Korner', 'IL': 'İlk gol'}
     for x in out:

@@ -2,7 +2,17 @@
 
 Karar 31 Ekim'de alındı. **30 Ekim, 31 Ekim ve 1 Kasım veri toplama günleri.** v7 Pazartesi, Yıldırım komut verince yapılır; o zamana kadar ajan kendiliğinden başlamaz.
 
-## Hafta sonu kuralları
+## Güncelleme: v6.5 yayında (31 Ekim 12:00)
+
+Yıldırım'ın kararıyla hafta sonu dondurma yerine ara sürüm v6.5 yayına alındı (31 Ekim ve 1 Kasım, 53 maç).
+
+- Seçim olasılıktan değere döndü: model / piyasa − 1 ≥ %8 Güçlü, %5–8 Orta; oran 1,60–3,50; korner, kart ve Asya handikabı hariç (`model.py` `SURUM['v6.5']`).
+- Gerekçe (122 maç, kapanış verisi): ayrışma %8+ iken oran kapanışa kadar ortalama +%3,5 modelin yönüne gitti (±0,9), %5+ iken +%2,4, ters yönde −%0,9, taban +%0,2. Asya handikabında sinyal yok (+%0,2), bu yüzden dışarıda. Kapanışa göre beklenen getiri yine eksi (%−2,8); yani sinyal gerçek ama henüz marjı karşılamıyor. Handikap kararı aynı veriye bakılarak verildi (eğitim içi).
+- Oranlar 31 Ekim 11:56'da tazelendi (hepsi başlamamıştı). Eski ham dosyalar `ham/v6-orijinal/`, v6 tahminleri `model/v6-tahminler-31ekim-1kasim.json`.
+- 53 maçın 10'unda öneri var (2 Güçlü, 10 Orta), 43'ünde değer yok. Başlık ve özetin sinyal kısmı otomatik yazıldı.
+- Pazartesi: v6 (yedek) ile v6.5'i aynı 53 maçta kapanışa göre ve getiriyle karşılaştır. Bu, v6.5 için ilk eğitim dışı sınav.
+
+## Hafta sonu kuralları (v6.5 öncesi plan)
 
 - Model dondurulmuş: v6. `model.py` ve eşikler değişmez.
 - 31 Ekim (30 maç) ve 1 Kasım (23 maç) tahminleri v6 ile yapıldı; olduğu gibi kalır. Kesin 11 ya da oran yenilemesi yapılmaz (ölçüm temiz kalsın).

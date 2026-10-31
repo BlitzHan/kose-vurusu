@@ -86,6 +86,9 @@
 
   function sinyaller(m) {
     const is = m.sonuc && m.sonuc.isabet ? Object.fromEntries(m.sonuc.isabet.oneriler.map((o) => [o.kod, o])) : null;
+    if (!m.oneriler.length && m.model.surum === 'v6.5') {
+      return '<div class="sinyal-yok"><b>Değer sinyali yok.</b> Oranlar modelin beklentisiyle uyumlu; hiçbir seçenekte model oranın ima ettiğinden %5 yüksek olasılık görmüyor.</div>';
+    }
     if (!m.oneriler.length) {
       const yakin = m.model.pazarlar.filter((p) => !p.elendi).sort((a, b) => b.puan - a.puan)[0];
       return `<div class="sinyal-yok"><b>${oranYaz(m.oran_min)} üstü oranlarda sinyal yok.</b> Veri iki yöne de açık.${yakin ? ` En yakın: ${esc(yakin.ad)} @ ${oranYaz(yakin.oran)} (${yuzde(yakin.puan)}).` : ''}</div>`;
@@ -243,7 +246,7 @@
       <p class="bg">Beklenen gol: takım verisi <b>${ondalik(tb[0], 2)} – ${ondalik(tb[1], 2)}</b>, oyuncu formuyla <b>${ondalik(m.model.veri_l[0], 2)} – ${ondalik(m.model.veri_l[1], 2)}</b>${m.model.piyasa_l ? `, piyasa <b>${ondalik(m.model.piyasa_l[0], 2)} – ${ondalik(m.model.piyasa_l[1], 2)}</b>` : ''}. Kullanılan: <b>${ondalik(l[0], 2)} – ${ondalik(l[1], 2)}</b>${m.model.korner ? ` · beklenen korner <b>${ondalik(m.model.korner)}</b>, kart <b>${ondalik(m.model.kart)}</b>` : ''}.</p>
       <div class="matris" role="img" aria-label="Skor olasılıkları yüzde">${h}</div>
       <div class="matris-alt"><span>Satır: ${esc(kisa(m.ev.ad))} golü</span><span>Sütun: ${esc(kisa(m.dep.ad))} golü · %</span></div>
-      <p class="not">Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; ${['v1', 'v2', 'v3'].includes(m.model.surum) ? 'Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı' : 'Güçlü için model en az %64, piyasa en az %60 olasılık vermeli'}${m.model.surum === 'v6' ? '; Orta için piyasa en az %55' : ''}. Yeşil satırlar seçilen sinyaller.</p>`;
+      <p class="not">${m.model.surum === 'v6.5' ? 'Değer: model olasılığı oranın ima ettiğinden en az %8 yüksekse Güçlü, %5–8 ise Orta. Oran 1,60–3,50; korner, kart ve Asya handikabı hariç. Puan = %60 model, %25 son 10 maç, %15 piyasa. Yeşil satırlar seçilen sinyaller.' : `Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; ${['v1', 'v2', 'v3'].includes(m.model.surum) ? 'Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı' : 'Güçlü için model en az %64, piyasa en az %60 olasılık vermeli'}${m.model.surum === 'v6' ? '; Orta için piyasa en az %55' : ''}. Yeşil satırlar seçilen sinyaller.`}</p>`;
   }
 
   // ---------------------------------------------------------------- bilet
