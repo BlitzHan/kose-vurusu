@@ -90,7 +90,7 @@ print(f'  toplam: gol {tg}, xG {txg:.1f}, beklenen {tl:.1f}\n')
 # 4) Korner ve kart
 print('KORNER / KART: beklenen - olan')
 for k in ('korner', 'kart'):
-    fark = [m['model'][k] - sum(m['sonuc']['ist'][k]) for m in biten]
+    fark = [m['model'][k] - sum(m['sonuc']['ist'][k]) for m in biten if k in m['sonuc']['ist']]
     print(f"  {k:6} " + '  '.join(f'{x:+.1f}' for x in fark) + f'   ortalama {sum(fark) / len(fark):+.2f}')
 print()
 
