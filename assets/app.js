@@ -86,29 +86,44 @@
 
   function sinyaller(m) {
     const is = m.sonuc && m.sonuc.isabet ? Object.fromEntries(m.sonuc.isabet.oneriler.map((o) => [o.kod, o])) : null;
+    const satir = (o, seviye) => {
+      const r = is && is[o.kod];
+      const durum = !r ? '' : r.iade ? 'iade' : r.tuttu == null ? '' : r.tuttu ? 'tuttu' : 'tutmadi';
+      const [eo, en] = o.gecmis_ev || [], [dO, dn] = o.gecmis_dep || [];
+      const gec = o.gecmis == null ? '' : ` · Son 10: <b>${esc(kisa(m.ev.ad))} ${sayiYaz(eo)}/${en}</b>, <b>${esc(kisa(m.dep.ad))} ${sayiYaz(dO)}/${dn}</b>`;
+      const fark = o.ayrisma == null ? '' : ` · Fark <b>${o.ayrisma >= 0 ? '+' : '−'}%${Math.round(Math.abs(o.ayrisma) * 100)}</b>`;
+      const sinif = { 'Güçlü': 'guclu', Orta: 'orta', Fikir: 'fikir' }[seviye];
+      return `
+        <div class="sinyal ${durum}${seviye === 'Fikir' ? ' fikir' : ''}">
+          <div class="yuzde" style="--p:${Math.round(o.puan * 100)}"><sup>%</sup>${Math.round(o.puan * 100)}</div>
+          <div class="ne"><span>${esc(o.ad)}</span>
+            <span class="oran" title="Oran">${oranYaz(o.oran)}</span>
+            <span class="etiket ${sinif}">${esc(seviye)}</span>
+            ${durum ? `<span class="zimba ${durum}">${{ tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' }[durum]}</span>` : ''}
+          </div>
+          <div class="kanit">Model <b>${yuzde(o.model)}</b> · Piyasa <b>${yuzde(o.piyasa)}</b>${fark}${gec}</div>
+        </div>`;
+    };
     if (!m.oneriler.length && m.model.surum === 'v6.5') {
-      return '<div class="sinyal-yok"><b>Değer sinyali yok.</b> Oranlar modelin beklentisiyle uyumlu; hiçbir seçenekte model oranın ima ettiğinden %5 yüksek olasılık görmüyor.</div>';
+      // Eşiği geçen yok: v6.5 kuralına uyan pazarlardan farkı en yüksek iki seçenek (farklı gruplardan) fikir olarak
+      const uygun = m.model.pazarlar
+        .filter((p) => p.ayrisma != null && p.oran >= 1.6 && p.oran <= 3.5 && !/^(AH|KOR|KART)/.test(p.kod))
+        .sort((a, b) => b.ayrisma - a.ayrisma);
+      const fikir = [], gr = new Set();
+      for (const p of uygun) {
+        if (gr.has(p.grup)) continue;
+        gr.add(p.grup);
+        fikir.push(p);
+        if (fikir.length === 2) break;
+      }
+      return '<div class="sinyal-yok"><b>Değer sinyali yok.</b> Hiçbir seçenekte model, oranın ima ettiğinden %5 yüksek olasılık görmüyor. Eşiğe en yakın seçenekler, yalnız fikir olarak:</div>'
+        + fikir.map((p) => satir(p, 'Fikir')).join('');
     }
     if (!m.oneriler.length) {
       const yakin = m.model.pazarlar.filter((p) => !p.elendi).sort((a, b) => b.puan - a.puan)[0];
       return `<div class="sinyal-yok"><b>${oranYaz(m.oran_min)} üstü oranlarda sinyal yok.</b> Veri iki yöne de açık.${yakin ? ` En yakın: ${esc(yakin.ad)} @ ${oranYaz(yakin.oran)} (${yuzde(yakin.puan)}).` : ''}</div>`;
     }
-    return m.oneriler.map((o) => {
-      const r = is && is[o.kod];
-      const durum = !r ? '' : r.iade ? 'iade' : r.tuttu == null ? '' : r.tuttu ? 'tuttu' : 'tutmadi';
-      const [eo, en] = o.gecmis_ev, [dO, dn] = o.gecmis_dep;
-      const gec = o.gecmis == null ? '' : ` · Son 10: <b>${esc(kisa(m.ev.ad))} ${sayiYaz(eo)}/${en}</b>, <b>${esc(kisa(m.dep.ad))} ${sayiYaz(dO)}/${dn}</b>`;
-      return `
-        <div class="sinyal ${durum}">
-          <div class="yuzde" style="--p:${Math.round(o.puan * 100)}"><sup>%</sup>${Math.round(o.puan * 100)}</div>
-          <div class="ne"><span>${esc(o.ad)}</span>
-            <span class="oran" title="Oran">${oranYaz(o.oran)}</span>
-            <span class="etiket ${o.seviye === 'Güçlü' ? 'guclu' : 'orta'}">${esc(o.seviye)}</span>
-            ${durum ? `<span class="zimba ${durum}">${{ tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' }[durum]}</span>` : ''}
-          </div>
-          <div class="kanit">Model <b>${yuzde(o.model)}</b> · Piyasa <b>${yuzde(o.piyasa)}</b>${gec}</div>
-        </div>`;
-    }).join('');
+    return m.oneriler.map((o) => satir(o, o.seviye)).join('');
   }
 
   function skorlar(m) {

@@ -220,6 +220,8 @@ button, select { font: inherit; color: inherit; }
 .etiket { font-size: 10.5px; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; padding: 3px 6px 2px; border-radius: 4px; line-height: 1.1; }
 .etiket.guclu { background: var(--guclu); color: #fff; }
 .etiket.orta { box-shadow: inset 0 0 0 1.5px var(--guclu); color: var(--guclu); }
+.etiket.fikir { box-shadow: inset 0 0 0 1.5px var(--murekkep-2); color: var(--murekkep-2); }
+.sinyal.fikir .yuzde, .sinyal.fikir .ne { opacity: .78; }
 .oran { font-size: 13px; font-weight: 800; padding: 3px 7px 2px; border-radius: 5px; background: var(--murekkep); color: var(--bilet); letter-spacing: .01em; }
 .zimba.iade { color: var(--murekkep-2); box-shadow: inset 0 0 0 1.5px var(--cizgi-koyu); }
 .kanit { font-size: 13px; color: var(--murekkep-2); line-height: 1.35; }
