@@ -62,7 +62,7 @@ DeepSeek'in iki iddiası kontrolde yanlış çıktı: `piyasa_lambda` hata terim
 - **v6 bu amaca ters çalışıyor.** Güçlü şartı "model ≥%64 ve piyasa ≥%60, değer ≈ 0": piyasanın favorisini seçiyor. Ayrıca `piyasa_agirlik=1.0` yüzünden modelin bağımsız bilgisi yok; piyasadan farklı düşünemeyen model piyasanın hatasını bulamaz.
 - **Yeni ölçüt: isabet değil, değer.** 2,80 oranlı ve %40 tutan bir seçim kârlıdır ama karnede "kötü" görünür. v7 karnesi: kapanış oranına göre kazanç (CLV), bir birimlik sanal getiri (ROI) ve kalibrasyon. İsabet oranı yan bilgi olur.
 - **Örnek uyarısı:** getiri çok gürültülü; 175 maçta gerçek bir üstünlüğü getiriyle kanıtlamak mümkün değil. Bu yüzden kapanış oranı (madde 7) artık en öncelikli veri.
-- **Sitede sanal getiri (31 Ekim):** karnede "Güçlü · 1 ₺" bloğu; günün ve tüm dönemin Güçlü önerilerine 1 ₺ yatırılmış gibi kâr/zarar ve yüzde.
+- **Sitede sanal getiri (31 Ekim):** karnede "Güçlü · 1 ₺" bloğu; günün Güçlü önerilerine 1 ₺ yatırılmış gibi kâr/zarar ve yüzde. Tüm dönem gösterilmez (Yıldırım: model sık değiştiği için yalnız gün bazında).
 - **Gerçekçi beklenti:** büyük liglerde form, sakatlık ve motivasyon büyük ölçüde zaten fiyatta. Üstünlük daha çok şu yerlerde aranmalı: alt ligler ve kupalar, haberin oranlara henüz yansımadığı erken saatler, kesin 11, piyasanın az ilgilendiği pazarlar. Her yeni bilgi (rakiple geçmiş, hırs, maçın anlamı) teste girer, kanıtlanmazsa çıkar.
 - Aday değişikliklerden 1. madde (puan = piyasa) bu amaçla çelişiyor. Seçim puanı değerden kurulur (model / piyasa − 1, marjı ayıklanmış). Piyasa yalnız tabanlık eder.
 - Diğer düzeltmeler (2–5) yine gerekli: modelin bağımsız katmanı eklenmeden önce taban olasılığın doğru olması lazım. Değer, doğru tabanın üzerine eklenen bilgiden çıkar.
