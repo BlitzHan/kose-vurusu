@@ -99,6 +99,8 @@ button, select { font: inherit; color: inherit; }
 .karne b { font-size: 15px; font-weight: 800; font-stretch: 100%; }
 .karne small { display: block; opacity: .72; font-weight: 500; }
 .karne-blok.guclu small:first-child { opacity: 1; color: #8fe0a8; font-weight: 700; }
+.karne-getiri.arti b { color: #8fe0a8; }
+.karne-getiri.eksi b { color: #ffb199; }
 
 /* ---------------------------------------------------------------- sayfa */
 .sayfa { max-width: 760px; margin: 0 auto; padding: 20px 16px 28px; }
@@ -371,7 +373,7 @@ tfoot td:first-child { background: var(--bilet); }
   .karne-blok + .karne-blok { padding-left: 0; border-left: 0; }
 }
 @media (max-width: 420px) {
-  .karne-toplam { display: none; }
+  .karne-skor { display: none; }
 }
 @media (max-width: 380px) {
   .xg { min-width: 56px; }

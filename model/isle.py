@@ -1,13 +1,15 @@
 """Biten maçın ham sonucunu (ham/<id>-sonuc.json) data/tahminler.json kaydına işler.
 
 Kullanım: python3 model/isle.py <id> [<id> ...]
-Tahminlere dokunmaz; yalnız `sonuc` alanını ve pazarların `olan` değerini yazar.
+         python3 model/isle.py --kapanis [<id> ...]   (yalnız ham/<id>-kapanis.json'daki kapanış oranlarını yazar; id yoksa hepsi)
+Tahminlere dokunmaz; yalnız `sonuc` alanını, pazarların `olan` değerini ve kapanış oranını (`kapanis`) yazar.
 Kart: gösterilen kart sayısı (sarı + kırmızı; ikinci sarıdan kırmızı ayrıca sayılır).
 """
 import json, os, sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 import sonuc as S
+from analiz import pazarlar
 
 KOK = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ALAN = ('xg', 'sut', 'isabetli', 'buyuk', 'ceza', 'korner', 'topa')
@@ -18,6 +20,22 @@ def ist(r):
     o = {k: i[k] for k in ALAN if k in i}
     o['kart'] = [(i.get('sari') or [0, 0])[t] + (i.get('kirmizi') or [0, 0])[t] for t in range(2)]
     return o
+
+
+def kapanis(m, oranlar):
+    """Maç bitince çekilen son oranlar kapanış sayılır; pazarlara ve önerilere yazılır (çizgi kaydıysa None)."""
+    kap = {}
+    for pz in oranlar:  # bitmiş maçta bazı seçenekler eksik dönebilir; o pazar atlanır
+        try:
+            kap.update({x['kod']: x['oran'] for x in pazarlar([pz], '', '')})
+        except (KeyError, ValueError, ZeroDivisionError, StopIteration):
+            pass
+    for p in m['model']['pazarlar']:
+        p['kapanis'] = kap.get(p['kod'])
+    if m.get('sonuc'):
+        for o in m['sonuc']['isabet']['oneriler']:
+            o['kapanis'] = kap.get(o['kod'])
+    return m
 
 
 def isle(m, r):
@@ -42,12 +60,23 @@ def isle(m, r):
             'skor': m['model']['skorlar'][0][0] == skor,
         },
     }
+    if r.get('oranlar'):
+        kapanis(m, r['oranlar'])
     return m
 
 
 if __name__ == '__main__':
     yol = os.path.join(KOK, 'data', 'tahminler.json')
     d = json.load(open(yol))
+    if sys.argv[1:2] == ['--kapanis']:
+        ham = os.path.join(KOK, 'ham')
+        ids = sys.argv[2:] or [f.split('-')[0] for f in sorted(os.listdir(ham)) if f.endswith('-kapanis.json')]
+        for i in ids:
+            m = next(x for x in d['maclar'] if x['kaynak_id'] == int(i))
+            kapanis(m, json.load(open(os.path.join(ham, f'{i}-kapanis.json')))['oranlar'])
+            print(m['id'], [(o['kod'], o['oran'], o.get('kapanis')) for o in m['oneriler']])
+        open(yol, 'w').write(json.dumps(d, ensure_ascii=False, separators=(',', ':')))
+        sys.exit()
     for i in sys.argv[1:]:
         r = json.load(open(os.path.join(KOK, 'ham', f'{i}-sonuc.json')))
         if r['mac']['durum'] != 'finished':

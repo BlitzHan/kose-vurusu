@@ -28,7 +28,8 @@
   };
 
   // ---------------------------------------------------------------- karne
-  // Seçili günün sinyal isabeti (toplam, Güçlü, Orta) ve skor isabeti; toplamın altında tüm günlerin oranı.
+  // Seçili günün sinyal isabeti (toplam, Güçlü, Orta), Güçlü sanal getirisi ve skor isabeti. Yalnız gün bazında:
+  // model sık güncellendiği için tüm dönemin oranı anlamlı değil.
   function sayim(maclar, seviye) {
     const biten = maclar.filter((m) => m.sonuc && m.sonuc.isabet);
     const sec = biten.flatMap((m) => {
@@ -38,19 +39,39 @@
     return { mac: biten.length, sec: sec.length, tut: sec.filter((o) => o.tuttu).length, skor: biten.filter((m) => m.sonuc.isabet.skor).length };
   }
   const oran = (s) => (s.sec ? '%' + Math.round((s.tut / s.sec) * 100) : '–');
+  // Sanal getiri: her öneriye 1 ₺, tutarsa oran − 1 kâr, tutmazsa 1 ₺ kayıp; iade sayılmaz.
+  function getiri(maclar, seviye) {
+    let say = 0, kar = 0;
+    maclar.filter((m) => m.sonuc && m.sonuc.isabet).forEach((m) => {
+      const on = Object.fromEntries(m.oneriler.map((o) => [o.kod, o]));
+      (m.sonuc.isabet.oneriler || []).forEach((r) => {
+        const o = on[r.kod];
+        if (!o || o.seviye !== seviye || r.tuttu == null || r.iade) return;
+        say += 1;
+        kar += r.tuttu ? o.oran - 1 : -1;
+      });
+    });
+    return { say, kar };
+  }
+  const isaretli = (v, h) => (v > 0 ? '+' : v < 0 ? '−' : '') + ondalik(Math.abs(v), h);
+  const getiriYuzde = (g) => (g.say ? '%' + isaretli((g.kar / g.say) * 100, 0) : '–');
   const blok = (ad, tut, say, alt, sinif = '') =>
     `<span class="karne-blok ${sinif}"><small>${ad}</small><b>${tut}/${say}</b><small>${alt}</small></span>`;
 
   function karne(gun) {
     const gm = veri.maclar.filter((m) => m.tarih === gun);
     const g = sayim(gm);
-    const t = sayim(veri.maclar);
-    const toplam = t.sec ? `tümü ${oran(t)}` : '';
-    if (!g.mac) return `<span class="karne-blok"><small>Bu gün</small><b>bekleniyor</b><small>${toplam}</small></span>`;
+    if (!g.mac) return '<span class="karne-blok"><small>Bu gün</small><b>bekleniyor</b></span>';
     const G = sayim(gm, 'Güçlü');
     const O = sayim(gm, 'Orta');
-    return blok('Sinyal', g.tut, g.sec, `${oran(g)}<span class="karne-toplam"> · ${toplam}</span>`)
+    const gg = getiri(gm, 'Güçlü');
+    const kasa = gg.say
+      ? `<span class="karne-blok karne-getiri ${gg.kar >= 0 ? 'arti' : 'eksi'}" title="Her Güçlü öneriye 1 ₺ yatırılmış gibi; gerçek para değil.">`
+        + `<small>Güçlü · 1 ₺</small><b>${isaretli(gg.kar, 2)} ₺</b><small>${getiriYuzde(gg)}</small></span>`
+      : '';
+    return blok('Sinyal', g.tut, g.sec, oran(g))
       + blok('Güçlü', G.tut, G.sec, oran(G), 'guclu')
+      + kasa
       + blok('Orta', O.tut, O.sec, oran(O))
       + blok('Skor', g.skor, g.mac, oran({ tut: g.skor, sec: g.mac }), 'karne-skor');
   }
@@ -310,9 +331,16 @@
   }
 
   // ---------------------------------------------------------------- sayfa
+  // İlk açılış: bugünün maçları; bugün maç yoksa en yakın gelecek gün, o da yoksa en son gün.
+  function varsayilanGun() {
+    const bugun = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Istanbul' }).format(new Date());
+    if (gunler.includes(bugun)) return bugun;
+    return [...gunler].reverse().find((g) => g > bugun) || gunler[0];
+  }
+
   function ciz() {
     const istenen = decodeURIComponent(location.hash.slice(1));
-    const gun = gunler.includes(istenen) ? istenen : gunler[0];
+    const gun = gunler.includes(istenen) ? istenen : varsayilanGun();
     const maclar = veri.maclar.filter((m) => m.tarih === gun)
       .sort(SIRALA[sira]);
     $('#gun-sec').value = gun;

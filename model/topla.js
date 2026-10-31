@@ -152,10 +152,11 @@ export async function topla(id, kok) {
 
 export async function sonuc(id, kok) {
   const get = api(kok);
-  const [ej, st, lu, inc] = await Promise.all([get(`/event/${id}`), get(`/event/${id}/statistics`), get(`/event/${id}/lineups`), get(`/event/${id}/incidents`)]);
+  const [ej, st, lu, inc, od] = await Promise.all([get(`/event/${id}`), get(`/event/${id}/statistics`), get(`/event/${id}/lineups`), get(`/event/${id}/incidents`), get(`/event/${id}/odds/1/all`)]);
   const veri = {
     alindi: new Date().toISOString(), mac: olayOzet(ej.event), ist: istatistik(st),
     kadro: lu ? { ev: kadro(lu.home), dep: kadro(lu.away) } : null,
+    oranlar: oranlar(od), // maç bitince dönen son oranlar = kapanış
     olaylar: inc ? inc.incidents.filter((i) => ['goal', 'card'].includes(i.incidentType)).map((i) => ({
       dk: i.time, tur: i.incidentType, sinif: i.incidentClass || null, ev: !!i.isHome, oyuncu: i.player && (i.player.shortName || i.player.name) || null,
     })) : null,
