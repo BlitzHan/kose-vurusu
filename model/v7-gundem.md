@@ -2,9 +2,18 @@
 
 Karar 31 Ekim'de alındı. **30 Ekim, 31 Ekim ve 1 Kasım veri toplama günleri.** v7 Pazartesi, Yıldırım komut verince yapılır; o zamana kadar ajan kendiliğinden başlamaz.
 
-## Güncelleme: v6.6 yayında (31 Ekim 12:40), v6.5'in yerine
+## Güncelleme: v6'ya geri dönüldü (31 Ekim 12:55)
 
-Yıldırım sıfırdan bakış ve dış görüş istedi. Brif (`model/inceleme-brif-2026-10-31.md`) OpenCode'daki 8 ücretsiz modele soruldu; 6'sı cevap verdi (DeepSeek V4.1, Nemotron Super, GLM 5.3, Flint, Beam, Nemotron Lightning; MiMo ve Big Pickle bekleniyordu).
+Yıldırım: veri arşivi (football-data.co.uk) bu bağlantıdan erişilemiyor (bağlantı karşı taraftan kesiliyor; VPN yok), uzun deneme süreci yorucu. 53 maçın tahmini sabahki v6'ya birebir döndü (orijinal ham dosyalar ve v6 başlık/özetleriyle). v6.5 ve v6.6 kodu `model.py`'de duruyor, yedekleri `model/` altında; Pazartesi kapanış oranıyla üçü karşılaştırılabilir.
+
+## v6.6 notları (12:40–12:55 yayında kaldı)
+
+Yıldırım sıfırdan bakış ve dış görüş istedi. Brif (`model/inceleme-brif-2026-10-31.md`) OpenCode'daki 8 ücretsiz modele soruldu; 6'sı cevap verdi (DeepSeek V4.1, Nemotron Super, GLM 5.3, Flint, Beam, Nemotron Lightning); MiMo ve Big Pickle sonradan geldi, ikisi de iyi.
+
+**Geç gelen iki cevaptan Pazartesi'ye kalanlar:**
+- MiMo: v6.6 ile neredeyse aynı tasarım (takım xG λ'sı 0,3/0,7 harman, yalnız maç sonucu, ilk gol, KG, ilk yarı). Ek öneri: açılıştan bu yana oran bize ters ≥%1,5 gittiyse öneriyi düşür. Benzer filtre testte tutmamıştı, 175 maçla yeniden bak.
+- Big Pickle: tek kaynakla marj %5–6'dan başlıyor; asıl kaldıraç **en iyi fiyat** (çok kaynak) ve keskin kapanışa göre ölçüm. Kombin için tek meşru yol: aynı maçtan ilişkili ayaklar (ör. ev kazanır + 2,5 üst); ortak olasılık skor matrisinden, sitenin aynı maç kombin fiyatıyla kıyas. Yıldırım'ın kombin isteği için Pazartesi'nin en ilginç adayı.
+- Üç model (DeepSeek, MiMo, Big Pickle) "CLV +%3,5 iken beklenen getiri −%2,8 olamaz" dedi; yanlış: beklenen getiri ≈ (1 + CLV) × (1 − marj) − 1, ikisi tutarlı.
 
 **Ortak görüş:** piyasa adil olasılığı taban olmalı; model ancak bağımsız ve tek tek sınanmış bilgiyle ayrışmalı; ana ölçü kapanış oranı; v6 "Güçlü" favori toplamaydı; kombin her bacak tek başına +EV değilse marjı çarpar (hepsi aynı fikirde). En iyi iki cevap DeepSeek ve Beam: beklenen gole takım xG'sini geri katmak, ağırlığı test setiyle seçmek, kapanış oranını tahmin etmek. Kalite: GLM'nin metni yer yer bozuk, Lightning yüzeysel ve hatalı.
 
