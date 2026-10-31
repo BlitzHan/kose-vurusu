@@ -2,6 +2,28 @@
 
 Karar 31 Ekim'de alındı. **30 Ekim, 31 Ekim ve 1 Kasım veri toplama günleri.** v7 Pazartesi, Yıldırım komut verince yapılır; o zamana kadar ajan kendiliğinden başlamaz.
 
+## Güncelleme: v6.6 yayında (31 Ekim 12:40), v6.5'in yerine
+
+Yıldırım sıfırdan bakış ve dış görüş istedi. Brif (`model/inceleme-brif-2026-10-31.md`) OpenCode'daki 8 ücretsiz modele soruldu; 6'sı cevap verdi (DeepSeek V4.1, Nemotron Super, GLM 5.3, Flint, Beam, Nemotron Lightning; MiMo ve Big Pickle bekleniyordu).
+
+**Ortak görüş:** piyasa adil olasılığı taban olmalı; model ancak bağımsız ve tek tek sınanmış bilgiyle ayrışmalı; ana ölçü kapanış oranı; v6 "Güçlü" favori toplamaydı; kombin her bacak tek başına +EV değilse marjı çarpar (hepsi aynı fikirde). En iyi iki cevap DeepSeek ve Beam: beklenen gole takım xG'sini geri katmak, ağırlığı test setiyle seçmek, kapanış oranını tahmin etmek. Kalite: GLM'nin metni yer yer bozuk, Lightning yüzeysel ve hatalı.
+
+**Kendi testlerim (122 maç, 1351 pazar satırı, oran 1,25–3,50, AH/korner/kart hariç; eğitim 27 Ekim öncesi, test sonrası):**
+
+| Sinyal | Eğitim CLV | Test CLV | Karar |
+|---|---|---|---|
+| Takım verisi (xG) λ, piyasa ağırlığı 0,5, ayrışma ≥%12 | +%1,9 (±0,8) | +%1,2 (±1,3) | **v6.6'ya girdi** |
+| Oyuncu formu çarpanı (v6.5'in asıl kaynağı) | +%2,2 | +%0,0 | çıktı |
+| Açılıştan bu yana oran hareketi | +%1,6 | +%0,2 | girmedi |
+| Pazarlar arası tutarsızlık (saf piyasa yapısı) | +%1,4 | −%0,6 | girmedi |
+| Üç sinyalin regresyonla birleşimi (üst %10) | +%1,8 | +%2,0 (±1,2) | ileride |
+
+- Sabahki "%8 ayrışma → +%3,5" bulgusunun çoğu v1–v2 dönemi kayıtlarından geliyordu (takım verisi o zaman λ'daydı). Bugünkü v6 ayarlarıyla yeniden hesaplanınca o seçimlerin çoğu kayboluyor.
+- **Hiçbir sinyal kapanışa göre beklenen getiriyi artıya taşımıyor** (en iyisi yaklaşık %−5). Tek kaynaklı ortalama oranlarda marj %6–7.
+- Oran aralığına göre marj: 1,00–1,25 %−4,3; 1,25–3,50 %−6–7. Düşük oranlar daha az pay ödüyor ama 4'lü kombinde %−16.
+- v6.6 seçimleri belirgin biçimde favori olmayan tarafa kayıyor (takım verisi favorileri piyasadan zayıf görüyor). 53 maçta 32 maçta öneri (30 Güçlü, 15 Orta).
+- Yedekler: `model/v6-tahminler-31ekim-1kasim.json`, `model/v6.5-tahminler-31ekim-1kasim.json`. Pazartesi üçü aynı 53 maçta kapanışa göre karşılaştırılacak.
+
 ## Güncelleme: v6.5 yayında (31 Ekim 12:00)
 
 Yıldırım'ın kararıyla hafta sonu dondurma yerine ara sürüm v6.5 yayına alındı (31 Ekim ve 1 Kasım, 53 maç).

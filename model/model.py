@@ -31,6 +31,13 @@ SURUM['v6'] = dict(SURUM['v5'], orta=dict(model=0.54, piyasa=0.55), skor='tutarl
 # v6.5 (31 Ekim): seçim olasılıktan değere döndü. 122 maçta model piyasadan %8+ yüksek gördüğünde oran kapanışa kadar
 # ortalama %3,5 modelin yönüne gitti (taban %0,2); %5+ için %2,4. Korner, kart ve Asya handikabı dışarıda, oran 1,60–3,50.
 SURUM['v6.5'] = dict(SURUM['v6'], secim='deger', ayrisma=dict(guclu=0.08, orta=0.05), oran_aralik=(1.6, 3.5))
+# v6.6 (31 Ekim): ayrışma artık takım verisinden. Beklenen gol yarı yarıya son 10 maçın xG tabanı ve piyasa
+# (v4'ten beri piyasa %100'dü); oyuncu formu çarpanı kapalı. 122 maçlık testte (27 Ekim öncesi eğitim, sonrası test)
+# kapanış oranında yalnız bu sinyal iki dönemde de artıda kaldı (≥%12: eğitim +%1,9, test +%1,2); form, oran hareketi
+# ve pazarlar arası tutarsızlık testte tutmadı. Yalnız maç sonucu, ilk gol, ilk yarı ve karşılıklı gol; maç başı en fazla 2.
+# Uyarı: kapanışa göre beklenen getiri hâlâ eksi (yaklaşık %−6); sinyal var ama marjı karşılamıyor.
+SURUM['v6.6'] = dict(SURUM['v6.5'], piyasa_agirlik=0.5, carpan_payi=0.0, ayrisma=dict(guclu=0.12, orta=0.08),
+                     gruplar=('Maç sonucu', 'İlk gol', 'İlk yarı', 'Karşılıklı gol'), en_fazla=2)
 # Eski sürümler için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı,
 # piyasa beklentisine uygulanan form/eksik çarpanı ve elle ayar payı (v4), son 10 maç eşiği, Güçlü eşikleri,
 # gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4), Orta eşikleri ve öne çıkan skorun seçimi (v6)
@@ -216,6 +223,8 @@ def seviye(x, en_fazla, p):
         # Asya handikabında sinyal yok (kapanışa göre +%0,2): Poisson'un ince kuyruğundan gelen yapısal sapma
         if x['grup'] in ('Korner', 'Kart') or x['kod'].startswith('AH') or not pi or not alt <= x['oran'] <= ust_:
             return None
+        if p.get('gruplar') and x['grup'] not in p['gruplar']:
+            return None
         a = m / pi - 1
         return 'Güçlü' if a >= p['ayrisma']['guclu'] else 'Orta' if a >= p['ayrisma']['orta'] else None
     if not p['son10_esik']:  # v4: son 10 sıklığı isabeti öngörmedi; yalnız puanda ve bilette kalır
@@ -284,7 +293,7 @@ def hesapla(m, surum='v6', ham=None):
             continue
         gruplar.add(x['grup'])
         sec.append(x)
-        if len(sec) == 3:
+        if len(sec) == p.get('en_fazla', 3):
             break
     alan = ['kod', 'ad', 'grup', 'oran', 'seviye', 'puan', 'model', 'gecmis', 'gecmis_ev', 'gecmis_dep', 'piyasa', 'deger', 'ayrisma']
     m['oneriler'] = [{a: x[a] for a in alan} for x in sec]
