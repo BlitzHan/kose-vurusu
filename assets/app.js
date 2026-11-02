@@ -53,6 +53,14 @@
     });
     return { say, kar };
   }
+  // v7 ana ölçüsü: önerideki oranın kapanış oranına göre farkı. Artı = piyasa bizim yönümüze gitti (değer bulundu).
+  function kapanis(maclar) {
+    const f = maclar.filter((m) => m.sonuc && m.sonuc.isabet).flatMap((m) => {
+      const on = Object.fromEntries(m.oneriler.map((o) => [o.kod, o]));
+      return (m.sonuc.isabet.oneriler || []).filter((r) => on[r.kod] && r.kapanis).map((r) => on[r.kod].oran / r.kapanis - 1);
+    });
+    return f.length ? f.reduce((a, b) => a + b, 0) / f.length : null;
+  }
   const isaretli = (v, h) => (v > 0 ? '+' : v < 0 ? '−' : '') + ondalik(Math.abs(v), h);
   const getiriYuzde = (g) => (g.say ? '%' + isaretli((g.kar / g.say) * 100, 0) : '–');
   const blok = (ad, tut, say, alt, sinif = '') =>
@@ -69,9 +77,14 @@
       ? `<span class="karne-blok karne-getiri ${gg.kar >= 0 ? 'arti' : 'eksi'}" title="Her Güçlü öneriye 1 ₺ yatırılmış gibi; gerçek para değil.">`
         + `<small>Güçlü · 1 ₺</small><b>${isaretli(gg.kar, 2)} ₺</b><small>${getiriYuzde(gg)}</small></span>`
       : '';
+    const k = kapanis(gm);
+    const kap = k == null ? ''
+      : `<span class="karne-blok karne-getiri ${k >= 0 ? 'arti' : 'eksi'}" title="Önerilerdeki oranın maç başındaki son orana göre ortalama farkı. Artı: piyasa sonradan bizim yönümüze döndü.">`
+        + `<small>Kapanış</small><b>%${isaretli(k * 100, 1)}</b><small>oran farkı</small></span>`;
     return blok('Sinyal', g.tut, g.sec, oran(g))
       + blok('Güçlü', G.tut, G.sec, oran(G), 'guclu')
       + kasa
+      + kap
       + blok('Orta', O.tut, O.sec, oran(O))
       + blok('Skor', g.skor, g.mac, oran({ tut: g.skor, sec: g.mac }), 'karne-skor');
   }
@@ -98,16 +111,17 @@
           <div class="yuzde" style="--p:${Math.round(o.puan * 100)}"><sup>%</sup>${Math.round(o.puan * 100)}</div>
           <div class="ne"><span>${esc(o.ad)}</span>
             <span class="oran" title="Oran">${oranYaz(o.oran)}</span>
-            <span class="etiket ${sinif}">${esc(seviye)}</span>
+            <span class="etiket ${sinif}">${esc(seviye === 'Orta' && m.model.surum === 'v7' ? 'Farklı bakış' : seviye)}</span>
             ${durum ? `<span class="zimba ${durum}">${{ tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' }[durum]}</span>` : ''}
           </div>
           <div class="kanit">Model <b>${yuzde(o.model)}</b> · Piyasa <b>${yuzde(o.piyasa)}</b>${fark}${gec}</div>
         </div>`;
     };
-    if (!m.oneriler.length && ['v6.5', 'v6.6'].includes(m.model.surum)) {
+    if (!m.oneriler.length && ['v6.5', 'v6.6', 'v7'].includes(m.model.surum)) {
       // Eşiği geçen yok: v6.5 kuralına uyan pazarlardan farkı en yüksek iki seçenek (farklı gruplardan) fikir olarak
       const uygun = m.model.pazarlar
-        .filter((p) => p.ayrisma != null && p.oran >= 1.6 && p.oran <= 3.5 && !/^(AH|KOR|KART)/.test(p.kod))
+        .filter((p) => p.ayrisma != null && p.oran >= 1.6 && p.oran <= 3.5 && !/^(AH|KOR|KART)/.test(p.kod)
+          && (m.model.surum !== 'v7' || p.grup === 'Maç sonucu'))
         .sort((a, b) => b.ayrisma - a.ayrisma);
       const fikir = [], gr = new Set();
       for (const p of uygun) {
@@ -261,7 +275,7 @@
       <p class="bg">Beklenen gol: takım verisi <b>${ondalik(tb[0], 2)} – ${ondalik(tb[1], 2)}</b>, oyuncu formuyla <b>${ondalik(m.model.veri_l[0], 2)} – ${ondalik(m.model.veri_l[1], 2)}</b>${m.model.piyasa_l ? `, piyasa <b>${ondalik(m.model.piyasa_l[0], 2)} – ${ondalik(m.model.piyasa_l[1], 2)}</b>` : ''}. Kullanılan: <b>${ondalik(l[0], 2)} – ${ondalik(l[1], 2)}</b>${m.model.korner ? ` · beklenen korner <b>${ondalik(m.model.korner)}</b>, kart <b>${ondalik(m.model.kart)}</b>` : ''}.</p>
       <div class="matris" role="img" aria-label="Skor olasılıkları yüzde">${h}</div>
       <div class="matris-alt"><span>Satır: ${esc(kisa(m.ev.ad))} golü</span><span>Sütun: ${esc(kisa(m.dep.ad))} golü · %</span></div>
-      <p class="not">${['v6.5', 'v6.6'].includes(m.model.surum) ? (m.model.surum === 'v6.6' ? 'Değer: beklenen gol yarı yarıya takımların son 10 maç xG verisinden ve oranlardan. Bu olasılık oranın ima ettiğinden en az %12 yüksekse Güçlü, %8–12 ise Orta. Oran 1,60–3,50; yalnız maç sonucu, ilk gol, ilk yarı ve karşılıklı gol; maç başı en fazla 2.' : 'Değer: model olasılığı oranın ima ettiğinden en az %8 yüksekse Güçlü, %5–8 ise Orta. Oran 1,60–3,50; korner, kart ve Asya handikabı hariç.') + ' Puan = %60 model, %25 son 10 maç, %15 piyasa. Yeşil satırlar seçilen sinyaller.' : `Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; ${['v1', 'v2', 'v3'].includes(m.model.surum) ? 'Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı' : 'Güçlü için model en az %64, piyasa en az %60 olasılık vermeli'}${m.model.surum === 'v6' ? '; Orta için piyasa en az %55' : ''}. Yeşil satırlar seçilen sinyaller.`}</p>`;
+      <p class="not">${m.model.surum === 'v7' ? 'Değer: beklenen gol yarı yarıya takımların son 10 maç xG verisinden ve oranlardan. Bu olasılık oranın ima ettiğinden en az %12 yüksekse Güçlü, %8–12 ise farklı bakış (öneri değil). Oran 1,60–3,50; yalnız maç sonucu, çifte şans ve beraberlikte iade; maç başı tek seçenek. Ölçü isabet değil, oranın kapanışa göre farkı. Yeşil satırlar seçilen sinyaller.' : ['v6.5', 'v6.6'].includes(m.model.surum) ? (m.model.surum === 'v6.6' ? 'Değer: beklenen gol yarı yarıya takımların son 10 maç xG verisinden ve oranlardan. Bu olasılık oranın ima ettiğinden en az %12 yüksekse Güçlü, %8–12 ise Orta. Oran 1,60–3,50; yalnız maç sonucu, ilk gol, ilk yarı ve karşılıklı gol; maç başı en fazla 2.' : 'Değer: model olasılığı oranın ima ettiğinden en az %8 yüksekse Güçlü, %5–8 ise Orta. Oran 1,60–3,50; korner, kart ve Asya handikabı hariç.') + ' Puan = %60 model, %25 son 10 maç, %15 piyasa. Yeşil satırlar seçilen sinyaller.' : `Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; ${['v1', 'v2', 'v3'].includes(m.model.surum) ? 'Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı' : 'Güçlü için model en az %64, piyasa en az %60 olasılık vermeli'}${m.model.surum === 'v6' ? '; Orta için piyasa en az %55' : ''}. Yeşil satırlar seçilen sinyaller.`}</p>`;
   }
 
   // ---------------------------------------------------------------- bilet

@@ -7,6 +7,8 @@ v4: 23 Ekim sonuçlarından sonra (33 maç): beklenen gol piyasadan, gol çizgil
 v5: 24 Ekim sonuçlarından sonra (55 maç): kart ortalaması 4,4, kart olasılığının %75'i piyasadan (bkz. geri-bildirim-2026-10-24.md).
 v6: 26 Ekim sonuçlarından sonra (89 maç): Orta için piyasa en az %55, korner olasılığının %75'i piyasadan,
     öne çıkan skor en olası sonucun (1/X/2) içinden (bkz. geri-bildirim-2026-10-26.md).
+v6.5, v6.6: 31 Ekim ara sürümleri, değer seçimi (bkz. v7-gundem.md).
+v7: 2 Kasım, 175 maç ve kapanış oranıyla: v6.6'nın değer seçimi yalnız maç sonucu grubunda (bkz. geri-bildirim-2026-11-02.md).
 """
 import math
 
@@ -38,6 +40,11 @@ SURUM['v6.5'] = dict(SURUM['v6'], secim='deger', ayrisma=dict(guclu=0.08, orta=0
 # Uyarı: kapanışa göre beklenen getiri hâlâ eksi (yaklaşık %−6); sinyal var ama marjı karşılamıyor.
 SURUM['v6.6'] = dict(SURUM['v6.5'], piyasa_agirlik=0.5, carpan_payi=0.0, ayrisma=dict(guclu=0.12, orta=0.08),
                      gruplar=('Maç sonucu', 'İlk gol', 'İlk yarı', 'Karşılıklı gol'), en_fazla=2)
+# v7 (2 Kasım): v6.6'nın sinyali üç dönemde de kapanışı yendi (eğitim +%1,9, test +%1,4, 31 Ekim–1 Kasım +%4,0).
+# Eğitim setinde (27 Ekim öncesi) yalnız maç sonucu grubu (1X2, çifte şans, beraberlikte iade) daha iyiydi:
+# kapanış +%2,3 / beklenen getiri %−3,8; ilk yarı +%1,0 / %−6,5, ilk gol %−10 (marj yüksek). Testte +%3,6 / %−2,4.
+# Ağırlık ve eşikler v6.6'daki gibi: tarama düz çıktı, ince ayar gürültü olurdu. Maç başı tek öneri.
+SURUM['v7'] = dict(SURUM['v6.6'], gruplar=('Maç sonucu',), en_fazla=1)
 # Eski sürümler için varsayılanlar: puan formülü, ilişkili öneri eşiği (1 = eleme yok), kadro kesin değilken form payı,
 # piyasa beklentisine uygulanan form/eksik çarpanı ve elle ayar payı (v4), son 10 maç eşiği, Güçlü eşikleri,
 # gruba göre olasılığın piyasanın kendi olasılığıyla harmanlanma payı (v4), Orta eşikleri ve öne çıkan skorun seçimi (v6)

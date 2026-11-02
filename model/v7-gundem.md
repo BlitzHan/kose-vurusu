@@ -1,5 +1,7 @@
 # v7 gündemi · Pazartesi 2 Kasım 2026
 
+**Durum (2 Kasım): v7 yapıldı ve yayında.** Sonuç ve gerekçe: `geri-bildirim-2026-11-02.md`. Aşağısı tarihçe.
+
 Karar 31 Ekim'de alındı. **30 Ekim, 31 Ekim ve 1 Kasım veri toplama günleri.** v7 Pazartesi, Yıldırım komut verince yapılır; o zamana kadar ajan kendiliğinden başlamaz.
 
 ## Güncelleme: v6'ya geri dönüldü (31 Ekim 12:55)

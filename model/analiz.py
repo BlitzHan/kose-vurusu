@@ -192,7 +192,7 @@ def onem(h, taraf, avrupa_ad):
             o['lig'] = {'ad': tr(lig['lig']['ad']), 'sira': r2['sira'], 'puan': r2['puan'], 'oynanan': r2['oynanan'],
                         'lider_fark': max(x['puan'] for x in satirlar) - r2['puan']}
     seviye, metin = 'normal', ''
-    if r:
+    if r and avrupa_ad in LIG_MAC:  # lig maçında Avrupa şablonu yanlıştı
         if r['oynanan'] >= 2 and r['puan'] == 0:
             seviye, metin = 'yüksek', 'Puanı yok; kaybederse ilk 24 yolu daralır.'
         elif r['sira'] <= 8:
@@ -206,7 +206,7 @@ def onem(h, taraf, avrupa_ad):
 
 
 # ---------------------------------------------------------------- maç kaydı
-def kayit(h, eski=None, surum='v6'):
+def kayit(h, eski=None, surum='v7'):
     mac = h['mac']
     ev, dep = AD.get(mac['ev']['ad'], mac['ev']['ad']), AD.get(mac['dep']['ad'], mac['dep']['ad'])
     avrupa = tr(mac['ut_ad'])
@@ -239,7 +239,9 @@ def kayit(h, eski=None, surum='v6'):
         x.update(gecmis=g, gecmis_ev=ge, gecmis_dep=gd, elendi=x['oran'] < 1.35 or x['oran'] > 3.5, model=0, puan=0, deger=0, seviye=None)
     P = {x['kod']: x['piyasa'] for x in pz}
     piyasa_l = model.piyasa_lambda(P['MS1'], P['MSX'], P['MS2'], P['GOLU2.5']) if 'GOLU2.5' in P else None
-    ort = lambda T, k: st.mean([x[k + '_l'] + x[k + '_a'] for x in T['satirlar'] if x[k + '_l'] is not None])
+    # veri yoksa lig ortalaması (st.mean([]) çöküyordu)
+    yedek = {'korner': model.SURUM[surum]['korner_ort'] or 9.3, 'kart': model.SURUM[surum]['kart_ort'] or 4.4}
+    ort = lambda T, k: st.mean([x[k + '_l'] + x[k + '_a'] for x in T['satirlar'] if x[k + '_l'] is not None] or [yedek[k]])
     ham = {k: round((ort(takim['ev'], k) + ort(takim['dep'], k)) / 2, 2) for k in ('korner', 'kart')}
     m = {
         'id': f"{t:%Y-%m-%d}-{slug(ev)}-{slug(dep)}", 'kaynak_id': mac['id'], 'tarih': f'{t:%Y-%m-%d}', 'saat': f'{t:%H:%M}',
@@ -278,7 +280,7 @@ def slug(ad):
 
 if __name__ == '__main__':
     argv = [a for a in sys.argv[1:] if not a.startswith('--')]
-    surum = sys.argv[sys.argv.index('--surum') + 1] if '--surum' in sys.argv else 'v6'
+    surum = sys.argv[sys.argv.index('--surum') + 1] if '--surum' in sys.argv else 'v7'
     argv = [a for a in argv if a != surum]
     yol = os.path.join(KOK, 'data', 'tahminler.json')
     d = json.load(open(yol))
