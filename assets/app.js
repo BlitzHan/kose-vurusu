@@ -89,6 +89,49 @@
       + blok('Skor', g.skor, g.mac, oran({ tut: g.skor, sec: g.mac }), 'karne-skor');
   }
 
+  // ---------------------------------------------------------------- kombin
+  // Günün Güçlü önerilerinden 2'li ve 3'lü kupon (model/kombin.py). Ayak durumu maçın sonuç kaydından okunur;
+  // iade olan ayak kuponda 1 sayılır.
+  function ayakDurumu(a) {
+    const m = veri.maclar.find((x) => x.id === a.id);
+    const r = m && m.sonuc && m.sonuc.isabet && (m.sonuc.isabet.oneriler || []).find((o) => o.kod === a.kod);
+    return !r ? '' : r.iade ? 'iade' : r.tuttu == null ? '' : r.tuttu ? 'tuttu' : 'tutmadi';
+  }
+
+  function kombinKarti(k) {
+    const dur = k.ayaklar.map(ayakDurumu);
+    const yatti = dur.includes('tutmadi');
+    const bitti = !yatti && dur.every(Boolean);
+    const gercek = k.ayaklar.reduce((x, a, i) => x * (dur[i] === 'tuttu' ? a.oran : 1), 1);
+    const sonuc = yatti ? '<span class="zimba tutmadi">Yattı</span>'
+      : bitti ? (dur.every((d) => d === 'iade') ? '<span class="zimba iade">İade</span>' : `<span class="zimba tuttu">Tuttu · ${oranYaz(gercek)}</span>`) : '';
+    const ayak = (a, i) => `
+      <li class="ayak ${dur[i]}">
+        <span class="ayak-mac">${esc(a.saat)} · ${esc(a.mac)}</span>
+        <span class="ayak-sec"><b>${esc(a.ad)}</b><span class="oran">${oranYaz(a.oran)}</span>${dur[i] ? `<span class="zimba ${dur[i]}">${{ tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' }[dur[i]]}</span>` : ''}</span>
+      </li>`;
+    const iadeli = k.ayaklar.some((a) => /^DNB/.test(a.kod));
+    return `<article class="kombin">
+      <header class="kombin-bas"><div><b>${esc(k.ad)} kombin</b><small>deney · bahis tavsiyesi değil</small></div>
+        <div class="kombin-oran">${oranYaz(k.oran)}<small>toplam oran</small></div></header>
+      <ol class="ayaklar">${k.ayaklar.map(ayak).join('')}</ol>
+      <div class="kombin-alt">${sonuc}
+        <span>Tutma: model <b>${yuzde(k.model.tam)}</b> · piyasa <b>${yuzde(k.piyasa.tam)}</b></span>
+        ${iadeli ? `<span>Yatmama, iade dahil: model <b>${yuzde(k.model.kaybetmez)}</b> · piyasa <b>${yuzde(k.piyasa.kaybetmez)}</b></span>` : ''}
+        <span>Oranlara göre beklenen getiri <b>%${isaretli(k.piyasa.getiri * 100, 0)}</b></span>
+      </div>
+    </article>`;
+  }
+
+  function kombinler(gun) {
+    const kl = (veri.kombinler || {})[gun] || [];
+    if (!kl.length) return '';
+    return `<section class="kombin-alan" aria-label="Kombin">
+      <h2 class="kombin-baslik">Günün kombinleri <span>Güçlü önerilerden, kaybetmeme olasılığı en yüksek olanlar. Kombin oranlardaki kesintiyi de çarpar; her ayak tek başına değerli değilse kayıp büyür.</span></h2>
+      <div class="kombin-kartlar">${kl.map(kombinKarti).join('')}</div>
+    </section>`;
+  }
+
   // ---------------------------------------------------------------- bilet gövdesi
   function formSeridi(t) {
     return `<div class="form-seridi" aria-label="Son 5 maç">${t.maclar.slice(0, 5).map((x) => {
@@ -381,6 +424,7 @@
     const altYazi = sira === 'guven' ? 'en güvenilir sinyal önde' : 'saat sırasıyla';
     $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maç · ${altYazi}, veriler koçanda</span>`;
     document.title = `Köşe Vuruşu · ${tarihYaz(gun, { day: 'numeric', month: 'long' })}`;
+    $('#kombin').innerHTML = kombinler(gun);
     $('#biletler').innerHTML = maclar.map(bilet).join('');
     sigdir();
   }

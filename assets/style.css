@@ -117,6 +117,31 @@ button, select { font: inherit; color: inherit; }
 .biletler { display: grid; gap: 28px; }
 .bos { color: var(--ust-yazi); opacity: .8; text-align: center; padding: 48px 0; }
 
+/* ---------------------------------------------------------------- kombin */
+.kombin-alan { margin: 0 0 28px; }
+.kombin-baslik { margin: 0 2px 12px; color: var(--ust-yazi); font-size: 18px; font-weight: 850; font-stretch: 112%; letter-spacing: -.01em; }
+.kombin-baslik span { display: block; margin-top: 5px; max-width: 70ch; font-size: 13px; font-weight: 500; font-stretch: 100%; letter-spacing: 0; line-height: 1.4; opacity: .78; }
+.kombin-kartlar { display: grid; gap: 16px; }
+.kombin { background: var(--bilet); color: var(--murekkep); border-radius: 14px; filter: drop-shadow(0 10px 14px rgba(3, 26, 12, .28)); }
+.kombin-bas { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 14px 18px 12px; border-bottom: 2px dotted var(--cizgi-koyu); }
+.kombin-bas b { display: block; font-size: 20px; font-weight: 850; font-stretch: 112%; letter-spacing: -.02em; }
+.kombin-bas small { display: block; margin-top: 3px; font-size: 12px; font-weight: 600; color: var(--murekkep-3); }
+.kombin-oran { font-size: 30px; font-weight: 850; line-height: 1; letter-spacing: -.02em; text-align: right; font-variant-numeric: tabular-nums; }
+.kombin-oran small { display: block; margin-top: 4px; font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--murekkep-3); }
+.ayaklar { list-style: none; margin: 0; padding: 4px 18px; }
+.ayak { padding: 10px 0; border-bottom: 1px solid var(--cizgi); }
+.ayak:last-child { border-bottom: 0; }
+.ayak-mac { display: block; font-size: 12.5px; font-weight: 600; color: var(--murekkep-3); }
+.ayak-sec { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px; font-size: 16px; line-height: 1.2; }
+.ayak-sec b { font-weight: 750; }
+.ayak.tutmadi .ayak-sec b { color: var(--murekkep-3); }
+.kombin-alt { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 18px 16px; border-radius: 0 0 14px 14px; background: var(--bilet-2); font-size: 13px; color: var(--murekkep-2); line-height: 1.35; }
+.kombin-alt b { color: var(--murekkep); }
+.kombin-alt .zimba { margin-bottom: 4px; }
+@media (min-width: 640px) {
+  .kombin-kartlar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+}
+
 /* ---------------------------------------------------------------- bilet */
 .bilet { --ad-boy: clamp(21px, 6.4vw, 36px); --kesik: 13px; position: relative; filter: drop-shadow(0 12px 16px rgba(3, 26, 12, .32)); }
 .govde, .kocan { position: relative; background: var(--bilet); color: var(--murekkep); }
