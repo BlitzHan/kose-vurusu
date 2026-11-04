@@ -11,7 +11,7 @@ Repo kökünden; yerel sunucu `python3 model/sunucu.py 8643` (siteyi sunar, ham 
    await t.topla(MAC_ID, API_KOKU);
    ```
 3. `python3 model/analiz.py MAC_ID [MAC_ID ...]` → `data/tahminler.json`'a ekler ya da günceller (v7). Başlık ve özet elle yazılır; güncellemede korunur.
-4. `python3 model/kombin.py <gün>` → günün Güçlü önerilerinden 2'li ve 3'lü kombin (`kombinler[<gün>]`). Ayak durumunu site maç sonucundan okur; sonuç sonrası ayrıca çalıştırmak gerekmez. Öneriler değişirse yeniden çalıştır.
+4. `python3 model/okuma.py <gün>` → Okuma (okuma-1): tahmin, Güçlü/Orta sinyaller, senaryolar, günün kuponu ve test özeti. Ayrıntı `model/okuma-1.md`. Eski kombin aracı (yalnız v7 için): `python3 model/kombin.py <gün>` → günün Güçlü önerilerinden 2'li ve 3'lü kombin (`kombinler[<gün>]`). Ayak durumunu site maç sonucundan okur; sonuç sonrası ayrıca çalıştırmak gerekmez. Öneriler değişirse yeniden çalıştır.
 5. Kesin 11 güncellemesi **yalnız kullanıcı isterse** yapılır; ajan kendiliğinden yapmaz, teklif de etmez. İstenirse kesin 11 açıklanınca (~1 saat önce) 2–4. adımı tekrarla.
 
 ## Maç sonrası

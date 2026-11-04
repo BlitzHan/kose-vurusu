@@ -19,116 +19,105 @@
   let sira = 'saat';
   try { if (localStorage.getItem('sira') === 'guven') sira = 'guven'; } catch (e) { /* depolama kapalı */ }
 
-  // Güvenilirlik: en iyi önerinin seviyesi (Güçlü > Orta > yok), sonra puanı; eşitlikte saat.
+  // Güvenilirlik: en olası Güçlü sinyal önde, sonra Orta; eşitlikte saat.
   const SEVIYE = { 'Güçlü': 2, 'Orta': 1 };
-  const guven = (m) => Math.max(0, ...m.oneriler.map((o) => (SEVIYE[o.seviye] || 0) + o.puan));
+  const sinyalleri = (m) => (m.okuma && m.okuma.sinyaller) || [];
+  const guven = (m) => Math.max(0, ...sinyalleri(m).map((o) => (SEVIYE[o.seviye] || 0) + o.p));
   const SIRALA = {
     saat: (a, b) => a.saat.localeCompare(b.saat) || (b.manset - a.manset),
     guven: (a, b) => guven(b) - guven(a) || a.saat.localeCompare(b.saat),
   };
 
+  // Seçimin maçta olup olmadığı: 1 tuttu, 0 tutmadı, 'iade', null bilinmiyor.
+  // Önce pazarın işlenmiş sonucu, yoksa skordan.
+  function olan(m, kod) {
+    const s = m.sonuc;
+    if (!s || !s.skor) return null;
+    const p = m.model.pazarlar.find((x) => x.kod === kod);
+    if (p && 'olan' in p) return p.olan === 1 ? 1 : p.olan === 0 ? 0 : 'iade';
+    const [i, j] = s.skor.split('-').map(Number);
+    const g = /^GOL([UA])([\d.]+)$/.exec(kod);
+    if (g) return +(g[1] === 'U' ? i + j > +g[2] : i + j < +g[2]);
+    const k = {
+      MS1: i > j, MSX: i === j, MS2: j > i, CS1X: i >= j, CSX2: j >= i, KGV: i > 0 && j > 0, KGY: !(i > 0 && j > 0),
+      'MS1+U2.5': i > j && i + j >= 3, 'MS2+U2.5': j > i && i + j >= 3, 'MS1+KGV': i > j && j > 0, 'MS2+KGV': j > i && i > 0,
+      'MS1+KGY': i > j && j === 0, 'MS2+KGY': j > i && i === 0, 'MSX+A2.5': i === j && i + j <= 2,
+      'CS1X+A3.5': i >= j && i + j <= 3, 'CSX2+A3.5': j >= i && i + j <= 3, 'CS1X+KGV': i >= j && j > 0, 'CSX2+KGV': j >= i && i > 0,
+    };
+    if (kod in k) return +k[kod];
+    if (/^DNB[12]$/.test(kod)) return i === j ? 'iade' : +(kod === 'DNB1' ? i > j : j > i);
+    return null;
+  }
+  const durumAd = (r) => (r === 1 ? 'tuttu' : r === 0 ? 'tutmadi' : r === 'iade' ? 'iade' : '');
+  const ZIMBA = { tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' };
+
   // ---------------------------------------------------------------- karne
-  // Seçili günün sinyal isabeti (toplam, Güçlü, Orta), Güçlü sanal getirisi ve skor isabeti. Yalnız gün bazında:
-  // model sık güncellendiği için tüm dönemin oranı anlamlı değil.
+  // Seçili günün Güçlü isabeti ve 1 TL kasası (her Güçlü sinyale 1 TL), yanında oranların ima ettiği beklenen kasa.
+  // Gerçek ile beklenen arasındaki fark şanstır: bir günün kötü geçmesi modelin bozulduğu anlamına gelmez.
   function sayim(maclar, seviye) {
-    const biten = maclar.filter((m) => m.sonuc && m.sonuc.isabet);
-    const sec = biten.flatMap((m) => {
-      const sv = Object.fromEntries(m.oneriler.map((o) => [o.kod, o.seviye]));
-      return (m.sonuc.isabet.oneriler || []).filter((o) => o.tuttu != null && (!seviye || sv[o.kod] === seviye));
-    });
-    return { mac: biten.length, sec: sec.length, tut: sec.filter((o) => o.tuttu).length, skor: biten.filter((m) => m.sonuc.isabet.skor).length };
-  }
-  const oran = (s) => (s.sec ? '%' + Math.round((s.tut / s.sec) * 100) : '–');
-  // Sanal getiri: her öneriye 1 ₺, tutarsa oran − 1 kâr, tutmazsa 1 ₺ kayıp; iade sayılmaz.
-  function getiri(maclar, seviye) {
-    let say = 0, kar = 0;
-    maclar.filter((m) => m.sonuc && m.sonuc.isabet).forEach((m) => {
-      const on = Object.fromEntries(m.oneriler.map((o) => [o.kod, o]));
-      (m.sonuc.isabet.oneriler || []).forEach((r) => {
-        const o = on[r.kod];
-        if (!o || o.seviye !== seviye || r.tuttu == null || r.iade) return;
-        say += 1;
-        kar += r.tuttu ? o.oran - 1 : -1;
-      });
-    });
-    return { say, kar };
-  }
-  // v7 ana ölçüsü: önerideki oranın kapanış oranına göre farkı. Artı = piyasa bizim yönümüze gitti (değer bulundu).
-  function kapanis(maclar) {
-    const f = maclar.filter((m) => m.sonuc && m.sonuc.isabet).flatMap((m) => {
-      const on = Object.fromEntries(m.oneriler.map((o) => [o.kod, o]));
-      return (m.sonuc.isabet.oneriler || []).filter((r) => on[r.kod] && r.kapanis).map((r) => on[r.kod].oran / r.kapanis - 1);
-    });
-    return f.length ? f.reduce((a, b) => a + b, 0) / f.length : null;
+    let say = 0, tut = 0, kar = 0, bek = 0;
+    maclar.forEach((m) => sinyalleri(m).filter((s) => s.seviye === seviye).forEach((s) => {
+      const r = olan(m, s.kod);
+      if (r === null || r === 'iade') return;
+      say += 1; tut += r;
+      kar += r ? s.oran - 1 : -1;
+      bek += s.p * s.oran - 1;
+    }));
+    return { say, tut, kar, bek };
   }
   const isaretli = (v, h) => (v > 0 ? '+' : v < 0 ? '−' : '') + ondalik(Math.abs(v), h);
-  const getiriYuzde = (g) => (g.say ? '%' + isaretli((g.kar / g.say) * 100, 0) : '–');
+  const yuzdeOran = (t, s) => (s ? '%' + Math.round((t / s) * 100) : '–');
   const blok = (ad, tut, say, alt, sinif = '') =>
     `<span class="karne-blok ${sinif}"><small>${ad}</small><b>${tut}/${say}</b><small>${alt}</small></span>`;
 
   function karne(gun) {
-    const gm = veri.maclar.filter((m) => m.tarih === gun);
-    const g = sayim(gm);
-    if (!g.mac) return '<span class="karne-blok"><small>Bu gün</small><b>bekleniyor</b></span>';
-    const G = sayim(gm, 'Güçlü');
-    const O = sayim(gm, 'Orta');
-    const gg = getiri(gm, 'Güçlü');
-    const kasa = gg.say
-      ? `<span class="karne-blok karne-getiri ${gg.kar >= 0 ? 'arti' : 'eksi'}" title="Her Güçlü öneriye 1 ₺ yatırılmış gibi; gerçek para değil.">`
-        + `<small>Güçlü · 1 ₺</small><b>${isaretli(gg.kar, 2)} ₺</b><small>${getiriYuzde(gg)}</small></span>`
+    const gm = veri.maclar.filter((m) => m.tarih === gun && m.okuma);
+    const biten = gm.filter((m) => m.sonuc && m.sonuc.skor);
+    if (!biten.length) return '<span class="karne-blok"><small>Bu gün</small><b>bekleniyor</b></span>';
+    const G = sayim(gm, 'Güçlü'), O = sayim(gm, 'Orta');
+    const tah = biten.map((m) => olan(m, m.okuma.tahmin.kod)).filter((r) => r === 0 || r === 1);
+    const skor = biten.filter((m) => m.sonuc.skor === m.okuma.skor.skor).length;
+    const kasa = G.say
+      ? `<span class="karne-blok karne-getiri ${G.kar >= 0 ? 'arti' : 'eksi'}" title="Her Güçlü sinyale 1 TL yatırılmış gibi; gerçek para değil. Beklenen: oranlara göre bu sinyallerden ortalamada çıkması gereken.">`
+        + `<small>Güçlü · 1 TL</small><b>${isaretli(G.kar, 2)} TL</b><small>beklenen ${isaretli(G.bek, 2)}</small></span>`
       : '';
-    const k = kapanis(gm);
-    const kap = k == null ? ''
-      : `<span class="karne-blok karne-getiri ${k >= 0 ? 'arti' : 'eksi'}" title="Önerilerdeki oranın maç başındaki son orana göre ortalama farkı. Artı: piyasa sonradan bizim yönümüze döndü.">`
-        + `<small>Kapanış</small><b>%${isaretli(k * 100, 1)}</b><small>oran farkı</small></span>`;
-    return blok('Sinyal', g.tut, g.sec, oran(g))
-      + blok('Güçlü', G.tut, G.sec, oran(G), 'guclu')
+    return blok('Güçlü', G.tut, G.say, yuzdeOran(G.tut, G.say), 'guclu')
       + kasa
-      + kap
-      + blok('Orta', O.tut, O.sec, oran(O))
-      + blok('Skor', g.skor, g.mac, oran({ tut: g.skor, sec: g.mac }), 'karne-skor');
+      + blok('Orta', O.tut, O.say, yuzdeOran(O.tut, O.say))
+      + blok('Tahmin', tah.filter(Boolean).length, tah.length, yuzdeOran(tah.filter(Boolean).length, tah.length))
+      + blok('Skor', skor, biten.length, yuzdeOran(skor, biten.length), 'karne-skor');
   }
 
-  // ---------------------------------------------------------------- kombin
-  // Günün Güçlü önerilerinden 2'li ve 3'lü kupon (model/kombin.py). Ayak durumu maçın sonuç kaydından okunur;
-  // iade olan ayak kuponda 1 sayılır.
-  function ayakDurumu(a) {
-    const m = veri.maclar.find((x) => x.id === a.id);
-    const r = m && m.sonuc && m.sonuc.isabet && (m.sonuc.isabet.oneriler || []).find((o) => o.kod === a.kod);
-    return !r ? '' : r.iade ? 'iade' : r.tuttu == null ? '' : r.tuttu ? 'tuttu' : 'tutmadi';
-  }
-
-  function kombinKarti(k) {
-    const dur = k.ayaklar.map(ayakDurumu);
+  // ---------------------------------------------------------------- kupon
+  // Günün Güçlü sinyallerinden maç başı tek ayak, en olası 2'li ve 3'lü (model/okuma.py). Ayak durumu skordan.
+  function kuponKarti(k) {
+    const dur = k.ayaklar.map((a) => { const m = veri.maclar.find((x) => x.id === a.id); return m ? durumAd(olan(m, a.kod)) : ''; });
     const yatti = dur.includes('tutmadi');
     const bitti = !yatti && dur.every(Boolean);
     const gercek = k.ayaklar.reduce((x, a, i) => x * (dur[i] === 'tuttu' ? a.oran : 1), 1);
-    const sonuc = yatti ? '<span class="zimba tutmadi">Yattı</span>'
-      : bitti ? (dur.every((d) => d === 'iade') ? '<span class="zimba iade">İade</span>' : `<span class="zimba tuttu">Tuttu · ${oranYaz(gercek)}</span>`) : '';
+    const sonuc = yatti ? '<span class="zimba tutmadi">Yattı</span>' : bitti ? `<span class="zimba tuttu">Tuttu · ${oranYaz(gercek)}</span>` : '';
     const ayak = (a, i) => `
       <li class="ayak ${dur[i]}">
         <span class="ayak-mac">${esc(a.saat)} · ${esc(a.mac)}</span>
-        <span class="ayak-sec"><b>${esc(a.ad)}</b><span class="oran">${oranYaz(a.oran)}</span>${dur[i] ? `<span class="zimba ${dur[i]}">${{ tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' }[dur[i]]}</span>` : ''}</span>
+        <span class="ayak-sec"><b>${esc(a.ad)}</b><span class="oran">${oranYaz(a.oran)}</span><span class="ayak-p">${yuzde(a.p)}</span>${dur[i] ? `<span class="zimba ${dur[i]}">${ZIMBA[dur[i]]}</span>` : ''}</span>
       </li>`;
-    const iadeli = k.ayaklar.some((a) => /^DNB/.test(a.kod));
     return `<article class="kombin">
-      <header class="kombin-bas"><div><b>${esc(k.ad)} kombin</b><small>deney · bahis tavsiyesi değil</small></div>
+      <header class="kombin-bas"><div><b>${esc(k.ad)} kupon</b><small>deney · bahis tavsiyesi değil</small></div>
         <div class="kombin-oran">${oranYaz(k.oran)}<small>toplam oran</small></div></header>
       <ol class="ayaklar">${k.ayaklar.map(ayak).join('')}</ol>
       <div class="kombin-alt">${sonuc}
-        <span>Tutma: model <b>${yuzde(k.model.tam)}</b> · piyasa <b>${yuzde(k.piyasa.tam)}</b></span>
-        ${iadeli ? `<span>Yatmama, iade dahil: model <b>${yuzde(k.model.kaybetmez)}</b> · piyasa <b>${yuzde(k.piyasa.kaybetmez)}</b></span>` : ''}
-        <span>Oranlara göre beklenen getiri <b>%${isaretli(k.piyasa.getiri * 100, 0)}</b></span>
+        <span>Tutma olasılığı <b>${yuzde(k.p)}</b> · 10 kuponun yaklaşık ${Math.round(k.p * 10)}'u</span>
+        <span>Beklenen getiri <b>%${isaretli((k.p * k.oran - 1) * 100, 0)}</b></span>
       </div>
     </article>`;
   }
 
-  function kombinler(gun) {
-    const kl = (veri.kombinler || {})[gun] || [];
+  function kuponlar(gun) {
+    const kl = (veri.kupon || {})[gun] || [];
     if (!kl.length) return '';
-    return `<section class="kombin-alan" aria-label="Kombin">
-      <h2 class="kombin-baslik">Günün kombinleri <span>Güçlü önerilerden, kaybetmeme olasılığı en yüksek olanlar. Kombin oranlardaki kesintiyi de çarpar; her ayak tek başına değerli değilse kayıp büyür.</span></h2>
-      <div class="kombin-kartlar">${kl.map(kombinKarti).join('')}</div>
+    return `<section class="kombin-alan" aria-label="Kupon">
+      <h2 class="kombin-baslik">Günün kuponu <span>Güçlü sinyallerden, maç başı en olası tek ayak. Ayak sayısı arttıkça tutma olasılığı çarpılarak düşer.</span></h2>
+      <div class="kombin-kartlar">${kl.map(kuponKarti).join('')}</div>
     </section>`;
   }
 
@@ -140,53 +129,53 @@
     }).join('')}</div>`;
   }
 
-  function sinyaller(m) {
-    const is = m.sonuc && m.sonuc.isabet ? Object.fromEntries(m.sonuc.isabet.oneriler.map((o) => [o.kod, o])) : null;
-    const satir = (o, seviye) => {
-      const r = is && is[o.kod];
-      const durum = !r ? '' : r.iade ? 'iade' : r.tuttu == null ? '' : r.tuttu ? 'tuttu' : 'tutmadi';
-      const [eo, en] = o.gecmis_ev || [], [dO, dn] = o.gecmis_dep || [];
-      const gec = o.gecmis == null ? '' : ` · Son 10: <b>${esc(kisa(m.ev.ad))} ${sayiYaz(eo)}/${en}</b>, <b>${esc(kisa(m.dep.ad))} ${sayiYaz(dO)}/${dn}</b>`;
-      const fark = o.ayrisma == null ? '' : ` · Fark <b>${o.ayrisma >= 0 ? '+' : '−'}%${Math.round(Math.abs(o.ayrisma) * 100)}</b>`;
-      const sinif = { 'Güçlü': 'guclu', Orta: 'orta', Fikir: 'fikir' }[seviye];
+  // ---------------------------------------------------------------- okuma
+  function okumaBlok(m) {
+    const o = m.okuma;
+    if (!o) return '<div class="sinyal-yok">Bu maçta oran yok, okuma yapılamadı.</div>';
+    const t = o.tahmin;
+    const td = durumAd(olan(m, t.kod));
+    const guvenAd = { 'yüksek': 'net favori', orta: 'hafif favori', 'düşük': 'açık maç' }[t.guven];
+    const satir = (s) => {
+      const d = durumAd(olan(m, s.kod));
+      const sinif = s.seviye === 'Güçlü' ? 'guclu' : 'orta';
+      const deger = s.deger != null && s.deger >= 0 && s.en_iyi > s.oran
+        ? ` · <b class="deger">değerli fiyat ${oranYaz(s.en_iyi)}</b>` : '';
       return `
-        <div class="sinyal ${durum}${seviye === 'Fikir' ? ' fikir' : ''}">
-          <div class="yuzde" style="--p:${Math.round(o.puan * 100)}"><sup>%</sup>${Math.round(o.puan * 100)}</div>
-          <div class="ne"><span>${esc(o.ad)}</span>
-            <span class="oran" title="Oran">${oranYaz(o.oran)}</span>
-            <span class="etiket ${sinif}">${esc(seviye === 'Orta' && m.model.surum === 'v7' ? 'Farklı bakış' : seviye)}</span>
-            ${durum ? `<span class="zimba ${durum}">${{ tuttu: 'Tuttu', tutmadi: 'Tutmadı', iade: 'İade' }[durum]}</span>` : ''}
+        <div class="sinyal ${d}">
+          <div class="yuzde" style="--p:${Math.round(s.p * 100)}"><sup>%</sup>${Math.round(s.p * 100)}</div>
+          <div class="ne"><span>${esc(s.ad)}</span>
+            <span class="oran" title="Oran">${oranYaz(s.oran)}</span>
+            <span class="etiket ${sinif}">${s.seviye}</span>
+            ${d ? `<span class="zimba ${d}">${ZIMBA[d]}</span>` : ''}
           </div>
-          <div class="kanit">Model <b>${yuzde(o.model)}</b> · Piyasa <b>${yuzde(o.piyasa)}</b>${fark}${gec}</div>
+          <div class="kanit">${s.kanit ? esc(s.kanit) : 'Oranlardan temizlenmiş olasılık'}${deger}</div>
         </div>`;
     };
-    if (!m.oneriler.length && ['v6.5', 'v6.6', 'v7'].includes(m.model.surum)) {
-      // Eşiği geçen yok: v6.5 kuralına uyan pazarlardan farkı en yüksek iki seçenek (farklı gruplardan) fikir olarak
-      const uygun = m.model.pazarlar
-        .filter((p) => p.ayrisma != null && p.oran >= 1.6 && p.oran <= 3.5 && !/^(AH|KOR|KART)/.test(p.kod)
-          && (m.model.surum !== 'v7' || p.grup === 'Maç sonucu'))
-        .sort((a, b) => b.ayrisma - a.ayrisma);
-      const fikir = [], gr = new Set();
-      for (const p of uygun) {
-        if (gr.has(p.grup)) continue;
-        gr.add(p.grup);
-        fikir.push(p);
-        if (fikir.length === 2) break;
-      }
-      return '<div class="sinyal-yok"><b>Değer sinyali yok.</b> Hiçbir seçenek eşiği geçmedi. Eşiğe en yakın seçenekler, yalnız fikir olarak:</div>'
-        + fikir.map((p) => satir(p, 'Fikir')).join('');
-    }
-    if (!m.oneriler.length) {
-      const yakin = m.model.pazarlar.filter((p) => !p.elendi).sort((a, b) => b.puan - a.puan)[0];
-      return `<div class="sinyal-yok"><b>${oranYaz(m.oran_min)} üstü oranlarda sinyal yok.</b> Veri iki yöne de açık.${yakin ? ` En yakın: ${esc(yakin.ad)} @ ${oranYaz(yakin.oran)} (${yuzde(yakin.puan)}).` : ''}</div>`;
-    }
-    return m.oneriler.map((o) => satir(o, o.seviye)).join('');
+    const sg = o.sinyaller.length ? o.sinyaller.map(satir).join('')
+      : `<div class="sinyal-yok"><b>Sinyal yok.</b> 1,35 ve üstü oranlarda hiçbir seçenek %56 olasılığa ulaşmıyor; maç her yöne açık.</div>`;
+    const sn = o.senaryolar;
+    const bar = sn.map((x) => `<span class="sn sn-${x.kod}" style="flex:${Math.max(x.p, 0.02)}" title="${esc(x.ad)} ${yuzde(x.p)}">${x.p >= 0.12 ? yuzde(x.p) : ''}</span>`).join('');
+    const enIyi = [...sn].sort((a, b) => b.p - a.p).slice(0, 3);
+    const c = o.cesur;
+    const cd = c ? durumAd(olan(m, c.kod)) : '';
+    return `
+      <div class="tahmin ${td}">
+        <div class="tahmin-ana"><small>Tahmin · ${guvenAd}</small><b>${esc(t.ad)}</b><span>${yuzde(t.p)}</span>${td ? `<span class="zimba ${td}">${ZIMBA[td]}</span>` : ''}</div>
+        <div class="tahmin-skor${m.sonuc && m.sonuc.skor === o.skor.skor ? ' oldu' : ''}"><small>Skor</small><b>${esc(o.skor.skor.replace('-', '–'))}</b></div>
+      </div>
+      <div class="senaryo" aria-label="Senaryolar"><div class="sn-bar">${bar}</div>
+        <ul class="sn-liste">${enIyi.map((x) => `<li><i class="sn-${x.kod}"></i>${esc(x.ad)} <b>${yuzde(x.p)}</b> <small>en olası ${esc(x.skor.replace('-', '–'))}</small></li>`).join('')}</ul>
+      </div>
+      <h4 class="bolum-baslik">Sinyaller <span>büyük rakam: olasılık · 1 TL yalnız Güçlü'ye</span></h4>
+      ${sg}
+      ${c ? `<div class="cesur ${cd}"><small>Cesur</small><b>${esc(c.ad)}</b><span>${yuzde(c.p)} · ${c.oran ? 'oran ' + oranYaz(c.oran) : 'adil oran ' + oranYaz(c.adil_oran)}</span>${cd ? `<span class="zimba ${cd}">${ZIMBA[cd]}</span>` : ''}</div>` : ''}`;
   }
 
   function skorlar(m) {
-    const olan = m.sonuc && m.sonuc.skor;
-    return m.model.skorlar.slice(0, 3).map(([s, p], i) =>
-      `<div class="skor${i === 0 ? ' ilk' : ''}${olan === s ? ' oldu' : ''}"><b>${esc(s.replace('-', '–'))}</b><span>${yuzde(p)}</span></div>`).join('');
+    const olanSkor = m.sonuc && m.sonuc.skor;
+    return m.okuma.skorlar.slice(0, 3).map(([s, p], i) =>
+      `<div class="skor${i === 0 ? ' ilk' : ''}${olanSkor === s ? ' oldu' : ''}"><b>${esc(s.replace('-', '–'))}</b><span>${yuzde(p)}</span></div>`).join('');
   }
 
   // ---------------------------------------------------------------- maç sonu
@@ -213,12 +202,12 @@
       const [a, b] = ist[k];
       return `<tr><td class="${a > b ? 'fazla' : ''}">${on}${ondalik(a, n)}</td><th scope="row">${ad}</th><td class="${b > a ? 'fazla' : ''}">${on}${ondalik(b, n)}</td></tr>`;
     }).join('');
-    const [l0, l1] = m.model.lambda;
+    const [l0, l1] = m.okuma ? m.okuma.lambda : m.model.lambda;
     return `<div class="mac-sonu">
       <h4 class="bolum-baslik">Maç sonu <span>İY ${esc((s.iy || '').replace('-', '–'))}</span></h4>
       <div class="ms-goller"><p>${olaylar('ev')}</p><p>${olaylar('dep')}</p></div>
       <table class="ms-tablo">${satirlar}</table>
-      <p class="ms-bek">Bizim beklentimiz: gol <b>${ondalik(l0)} – ${ondalik(l1)}</b>${m.model.korner ? ` · korner <b>${ondalik(m.model.korner)}</b>` : ''}${m.model.kart ? ` · kart <b>${ondalik(m.model.kart)}</b>` : ''}</p>
+      <p class="ms-bek">Oranların beklentisi: gol <b>${ondalik(l0)} – ${ondalik(l1)}</b>${m.model.korner ? ` · korner <b>${ondalik(m.model.korner)}</b>` : ''}${m.model.kart ? ` · kart <b>${ondalik(m.model.kart)}</b>` : ''}</p>
     </div>`;
   }
 
@@ -290,35 +279,34 @@
   }
 
   function olasilikPaneli(m) {
-    const secili = new Set(m.oneriler.map((o) => o.kod));
-    const gruplar = [...new Set(m.model.pazarlar.map((x) => x.grup))].sort((a, b) => GRUP_SIRA.indexOf(a) - GRUP_SIRA.indexOf(b));
-    const elenen = m.model.pazarlar.filter((x) => x.elendi).length;
+    const o = m.okuma;
+    const secili = new Set(o.sinyaller.map((x) => x.kod));
     const bitti = !!(m.sonuc && m.sonuc.skor);
-    // Olan: 1 tuttu, 0 yattı, 0.5 yarım, null iade
-    const olanYaz = (v) => (v == null ? '<span class="olan iade">İade</span>' : v >= 0.75 ? '<span class="olan evet">✓</span>' : v > 0.25 ? '<span class="olan">½</span>' : '<span class="olan hayir">–</span>');
+    const gruplar = [...new Set(m.model.pazarlar.map((x) => x.grup))].sort((a, b) => GRUP_SIRA.indexOf(a) - GRUP_SIRA.indexOf(b));
+    const olanYaz = (r) => (r === 'iade' ? '<span class="olan iade">İade</span>' : r === 1 ? '<span class="olan evet">✓</span>' : r === 0 ? '<span class="olan hayir">–</span>' : '');
     const govde = gruplar.map((g) => {
-      const satirlar = m.model.pazarlar.filter((x) => x.grup === g).sort((a, b) => a.elendi - b.elendi || b.puan - a.puan);
-      return `<tr class="gr${satirlar.every((x) => x.elendi) ? ' elendi' : ''}"><td colspan="${bitti ? 6 : 5}">${esc(g)}</td></tr>` + satirlar.map((x) =>
-        `<tr class="${secili.has(x.kod) ? 'secili' : ''}${x.elendi ? ' elendi' : ''}"><td>${esc(x.ad)}</td><td>${oranYaz(x.oran)}</td><td>${yuzde(x.model)}</td><td>${yuzde(x.gecmis)}</td><td><b>${yuzde(x.puan)}</b></td>${bitti ? `<td>${'olan' in x ? olanYaz(x.olan) : ''}</td>` : ''}</tr>`).join('');
+      const satirlar = m.model.pazarlar.filter((x) => x.grup === g && o.olasilik[x.kod] != null && !/^AH/.test(x.kod))
+        .sort((a, b) => o.olasilik[b.kod] - o.olasilik[a.kod]);
+      if (!satirlar.length) return '';
+      return `<tr class="gr"><td colspan="${bitti ? 5 : 4}">${esc(g)}</td></tr>` + satirlar.map((x) =>
+        `<tr class="${secili.has(x.kod) ? 'secili' : ''}${x.oran < 1.35 ? ' elendi' : ''}"><td>${esc(x.ad)}</td><td>${oranYaz(x.oran)}</td><td><b>${yuzde(o.olasilik[x.kod])}</b></td><td>${yuzde(x.gecmis)}</td>${bitti ? `<td>${olanYaz(olan(m, x.kod))}</td>` : ''}</tr>`).join('');
     }).join('');
-    const mt = m.model.matris, enb = Math.max(...mt.flat());
-    const olan = m.sonuc && m.sonuc.skor;
+    const mt = o.matris, enb = Math.max(...mt.flat());
+    const olanSkor = m.sonuc && m.sonuc.skor;
     let h = '<div class="b"></div>' + mt[0].map((_, j) => `<div class="b">${j}</div>`).join('');
     mt.forEach((r, i) => {
       h += `<div class="b">${i}</div>` + r.map((v, j) => {
         const a = (v / enb) * 0.9;
-        return `<div class="h${a > 0.55 ? ' koyu' : ''}${olan === `${i}-${j}` ? ' oldu' : ''}" style="--a:${a.toFixed(3)}" title="${i}-${j}: ${yuzde(v)}">${Math.round(v * 100)}</div>`;
+        return `<div class="h${a > 0.55 ? ' koyu' : ''}${olanSkor === `${i}-${j}` ? ' oldu' : ''}" style="--a:${a.toFixed(3)}" title="${i}-${j}: ${yuzde(v)}">${Math.round(v * 100)}</div>`;
       }).join('');
     });
-    const [tb, l] = [m.model.taban, m.model.lambda];
-    return `<div class="tablo-kap"><table class="pazar-tablo">
-        <thead><tr><th>Seçenek</th><th>Oran</th><th>Model</th><th>Son 10</th><th>Puan</th>${bitti ? '<th title="Maçta gerçekleşti mi">Olan</th>' : ''}</tr></thead>
+    return `<div class="tablo-kap"><table class="pazar-tablo tum">
+        <thead><tr><th>Seçenek</th><th>Oran</th><th title="Oranlardan kesinti temizlenmiş olasılık">Olasılık</th><th title="İki takımın son 10 maçında bu sonucun sıklığı">Son 10</th>${bitti ? '<th title="Maçta gerçekleşti mi">Olan</th>' : ''}</tr></thead>
         <tbody>${govde}</tbody></table></div>
-      ${elenen ? `<button type="button" class="elenen-ac" data-elenen aria-pressed="false">Oranı ${oranYaz(m.oran_min)} altı ve çok yüksek ${elenen} seçeneği göster</button>` : ''}
-      <p class="bg">Beklenen gol: takım verisi <b>${ondalik(tb[0], 2)} – ${ondalik(tb[1], 2)}</b>, oyuncu formuyla <b>${ondalik(m.model.veri_l[0], 2)} – ${ondalik(m.model.veri_l[1], 2)}</b>${m.model.piyasa_l ? `, piyasa <b>${ondalik(m.model.piyasa_l[0], 2)} – ${ondalik(m.model.piyasa_l[1], 2)}</b>` : ''}. Kullanılan: <b>${ondalik(l[0], 2)} – ${ondalik(l[1], 2)}</b>${m.model.korner ? ` · beklenen korner <b>${ondalik(m.model.korner)}</b>, kart <b>${ondalik(m.model.kart)}</b>` : ''}.</p>
+      <p class="bg">Oranların beklediği gol: <b>${ondalik(o.lambda[0], 2)} – ${ondalik(o.lambda[1], 2)}</b>. Soluk satırlar 1,35 altı: sinyal olamaz.</p>
       <div class="matris" role="img" aria-label="Skor olasılıkları yüzde">${h}</div>
       <div class="matris-alt"><span>Satır: ${esc(kisa(m.ev.ad))} golü</span><span>Sütun: ${esc(kisa(m.dep.ad))} golü · %</span></div>
-      <p class="not">${m.model.surum === 'v0' ? 'Değer: olasılık takımların son maç xG verisinden; fiyat iki bürodan en iyisi. Yalnız en iyi fiyat adil olasılığın üstündeyse sinyal. Oran 1,50–2,60; maç başı tek seçenek. Ölçü isabet değil, fiyat farkı.' : m.model.surum === 'v7' ? 'Değer: beklenen gol yarı yarıya takımların son 10 maç xG verisinden ve oranlardan. Bu olasılık oranın ima ettiğinden en az %12 yüksekse Güçlü, %8–12 ise farklı bakış (öneri değil). Oran 1,60–3,50; yalnız maç sonucu, çifte şans ve beraberlikte iade; maç başı tek seçenek. Ölçü isabet değil, oranın kapanışa göre farkı. Yeşil satırlar seçilen sinyaller.' : ['v6.5', 'v6.6'].includes(m.model.surum) ? (m.model.surum === 'v6.6' ? 'Değer: beklenen gol yarı yarıya takımların son 10 maç xG verisinden ve oranlardan. Bu olasılık oranın ima ettiğinden en az %12 yüksekse Güçlü, %8–12 ise Orta. Oran 1,60–3,50; yalnız maç sonucu, ilk gol, ilk yarı ve karşılıklı gol; maç başı en fazla 2.' : 'Değer: model olasılığı oranın ima ettiğinden en az %8 yüksekse Güçlü, %5–8 ise Orta. Oran 1,60–3,50; korner, kart ve Asya handikabı hariç.') + ' Puan = %60 model, %25 son 10 maç, %15 piyasa. Yeşil satırlar seçilen sinyaller.' : `Puan = %60 model, %25 son 10 maç, %15 piyasa. Sinyal için oran ${oranYaz(m.oran_min)} ve üstü olmalı; ${['v1', 'v2', 'v3'].includes(m.model.surum) ? 'Güçlü için model piyasadan geride kalmamalı ama 12 puandan fazla da ayrışmamalı' : 'Güçlü için model en az %64, piyasa en az %60 olasılık vermeli'}${m.model.surum === 'v6' ? '; Orta için piyasa en az %55' : ''}. Yeşil satırlar seçilen sinyaller.`}</p>`;
+      <p class="not">Olasılık: her pazarın oranlarından büro kesintisi temizlenir (güç yöntemi). Skor matrisi bu olasılıklara en iyi uyan beklenen golle kurulur. Yeşil satırlar sinyal.</p>`;
   }
 
   // ---------------------------------------------------------------- bilet
@@ -361,17 +349,17 @@
         </header>
         <div class="takimlar">
           <div class="takim ev"><span class="rol">Ev</span><div class="ad"><h3 class="${uzunluk(m.ev.ad)}">${esc(m.ev.ad)}</h3></div>${formSeridi(m.ev)}${siraSatiri(m, 'ev')}</div>
-          <div class="xg"><b>${ondalik(m.model.lambda[0])} – ${ondalik(m.model.lambda[1])}</b><small>Beklenen gol</small></div>
+          <div class="xg"><b>${m.okuma ? `${ondalik(m.okuma.lambda[0])} – ${ondalik(m.okuma.lambda[1])}` : '–'}</b><small>Beklenen gol</small></div>
           <div class="takim dep"><span class="rol">Deplasman</span><div class="ad"><h3 class="${uzunluk(m.dep.ad)}">${esc(m.dep.ad)}</h3></div>${formSeridi(m.dep)}${siraSatiri(m, 'dep')}</div>
         </div>
         <div class="ozet"><h2>${esc(m.baslik)}</h2>${m.ozet ? `<p>${esc(m.ozet)}</p>` : ''}</div>
-        <section class="sinyaller" aria-label="Veri ne diyor">
-          <h4 class="bolum-baslik">Veri ne diyor <span>büyük rakam: 100 üzerinden puan</span></h4>
-          ${sinyaller(m)}
+        <section class="sinyaller" aria-label="Okuma">
+          ${m.okuma && m.okuma.geriye ? '<p class="geriye">Geriye dönük: bu okuma maçtan sonra, maç öncesi oranlarla hesaplandı.</p>' : ''}
+          ${okumaBlok(m)}
         </section>
         <section class="skorlar" aria-label="Olası skorlar">
           <h4 class="bolum-baslik">Olası skorlar</h4>
-          <div class="skor-satir">${skorlar(m)}</div>
+          <div class="skor-satir">${m.okuma ? skorlar(m) : ''}</div>
           ${bitti ? macSonu(m) : ''}
         </section>
       </div>
@@ -396,7 +384,7 @@
     if (sekme === 'maclar') panel = macTablosu(m[taraf]);
     else if (sekme === 'oyuncular') panel = oyuncuPaneli(m[taraf], m.model.form[taraf], m.kadro[taraf].eksik);
     else if (sekme === 'durum') panel = durumPaneli(m);
-    else panel = olasilikPaneli(m);
+    else panel = m.okuma ? olasilikPaneli(m) : '<p class="not">Oran yok.</p>';
     $('.cekmece-ic', el).innerHTML = `
       <div class="sekmeler" role="tablist">${sek.map(([k, ad]) =>
         `<button type="button" class="sekme" role="tab" data-sekme-sec="${k}" aria-selected="${k === sekme}">${ad}</button>`).join('')}</div>
@@ -421,12 +409,22 @@
     $('#gun-sec').value = gun;
     $('#karne').innerHTML = karne(gun);
     document.querySelectorAll('[data-sira]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.sira === sira));
-    const altYazi = sira === 'guven' ? 'en güvenilir sinyal önde' : 'saat sırasıyla';
+    const altYazi = sira === 'guven' ? 'en güçlü sinyal önde' : 'saat sırasıyla';
     $('#gun-baslik').innerHTML = `${tarihYaz(gun, { day: 'numeric', month: 'long', weekday: 'long' })}<span>${maclar.length} maç · ${altYazi}, veriler koçanda</span>`;
     document.title = `Köşe Vuruşu · ${tarihYaz(gun, { day: 'numeric', month: 'long' })}`;
-    $('#kombin').innerHTML = kombinler(gun);
+    $('#kombin').innerHTML = kuponlar(gun);
+    $('#test').innerHTML = testOzet();
     $('#biletler').innerHTML = maclar.map(bilet).join('');
     sigdir();
+  }
+
+  // Geriye dönük test: tüm bitmiş maçlarda Güçlü sinyallerin isabeti ve 1 TL kasası (model/okuma.py --test).
+  function testOzet() {
+    const t = veri.okuma_test;
+    if (!t || !t.secim || !t.secim['Güçlü']) return '';
+    const g = t.secim['Güçlü'], o = t.secim['Orta'];
+    return `<p class="test-ozet"><b>Okuma, ${t.mac} bitmiş maçta:</b> Güçlü ${g.tuttu}/${g.n} (%${Math.round((g.tuttu / g.n) * 100)}), 1 TL kasası <b>${isaretli(g.kasa, 1)} TL</b> (oranların beklediği ${isaretli(g.beklenen_kasa, 1)}).`
+      + `${o ? ` Orta ${o.tuttu}/${o.n} (%${Math.round((o.tuttu / o.n) * 100)}).` : ''} Kasa uzun vadede kesinti kadar eksidedir; artıya geçmenin yolu daha iyi fiyat.</p>`;
   }
 
   // Takım adı en fazla iki satıra ve sütuna sığana kadar yazıyı küçült; kelime ortadan bölünmesin.
