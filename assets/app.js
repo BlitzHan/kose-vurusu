@@ -106,7 +106,7 @@
         <div class="kombin-oran">${oranYaz(k.oran)}<small>toplam oran</small></div></header>
       <ol class="ayaklar">${k.ayaklar.map(ayak).join('')}</ol>
       <div class="kombin-alt">${sonuc}
-        <span>Tutma olasılığı <b>${yuzde(k.p)}</b> · 10 kuponun yaklaşık ${Math.round(k.p * 10)}'u</span>
+        <span>Tutma olasılığı <b>${yuzde(k.p)}</b> · 10 kuponun yaklaşık ${Math.round(k.p * 10)}${["'u", "'i", "'si", "'ü", "'ü", "'i", "'sı", "'si", "'i", "'u", "'u"][Math.round(k.p * 10)]}</span>
         <span>Beklenen getiri <b>%${isaretli((k.p * k.oran - 1) * 100, 0)}</b></span>
       </div>
     </article>`;
