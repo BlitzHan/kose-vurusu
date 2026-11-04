@@ -1,0 +1,19 @@
+{
+  "surum": "v0",
+  "rho": -0.06,
+  "iy_pay": 0.45,
+  "azalma": 0.90,
+  "gol_payi": 0.25,
+  "lig_gol": 1.32,
+  "ev_avantaj": 1.1,
+  "cekim_k": 8.0,
+  "b0": 0.0,
+  "b1": 1.0,
+  "b2": 0.0,
+  "esik": 0.03,
+  "oran_min": 1.5,
+  "oran_max": 2.6,
+  "pazarlar": ["MS1", "MSX", "MS2", "DNB1", "DNB2", "AH", "GOLU2.5", "GOLA2.5"],
+  "mac_basi": 1,
+  "min_ess": 5.0
+}
