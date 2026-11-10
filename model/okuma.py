@@ -1,6 +1,6 @@
-"""Köşe Vuruşu v8 · Okuma: piyasayı yenmeye değil, maçı okumaya çalışır.
+"""Köşe Vuruşu · Okuma 2: piyasayı yenmeye değil, maçı okumaya çalışır.
 
-Bakış açısı (bkz. model/v8-okuma.md):
+Bakış açısı (bkz. model/okuma-1.md, eşikler model/okuma-2.md):
 - Oranlar binlerce kişinin ortak tahminidir ve 184 maçlık testte iyi kalibre çıktı
   (%70 dediği %74, %80 dediği %86 oldu). Takım verisinden kurulan hiçbir model bunu geçemedi.
   Bu yüzden olasılığın tabanı oranlardır; kesinti (marj) temizlenir, başka hiçbir şey eklenmez.
@@ -23,12 +23,12 @@ from datetime import datetime, timedelta, timezone
 KOK = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 YOL = os.path.join(KOK, 'data', 'tahminler.json')
 TSI = timezone(timedelta(hours=3))
-SURUM = 'okuma-1'
+SURUM = 'okuma-2'
 N = 10            # skor matrisi boyu (0–9 gol)
 RHO = -0.06       # Dixon-Coles: düşük skorlu beraberlik düzeltmesi
-ORAN_MIN = 1.35   # kullanıcı kuralı: bu oranın altı sinyal olamaz
-GUCLU = 0.66      # temizlenmiş olasılık eşiği; 1,35 oranda ulaşılabilecek tavan ≈ %70
-ORTA = 0.56
+ORAN_MIN = 1.15   # okuma-2: 1,35 tabanı isabeti %70'e kilitliyordu (olasılık ≈ 0,96 / oran)
+GUCLU = 0.75      # temizlenmiş olasılık eşiği; 193 maçta bu kuralla Güçlü ≈ %80 tuttu
+ORTA = 0.66       # eski Güçlü bandı (%66–75) artık Orta
 
 
 def _grup(kod):
@@ -274,8 +274,8 @@ def oku(mac):
     skor = {'skor': f'{si}-{sj}', 'p': round(sp, 4)}
     skorlar = [[f'{i}-{j}', round(v, 4)] for v, i, j in hucre[:6]]
 
-    # 3) Sinyaller: tüm pazarlar, oran ≥ 1,35 (kullanıcı kuralı), kota yok.
-    #    Güçlü: oranlardan temizlenmiş olasılık ≥ %66 · Orta: %56–66. Her pazar grubundan en olası tek seçenek;
+    # 3) Sinyaller: tüm pazarlar, oran ≥ 1,15, kota yok.
+    #    Güçlü: oranlardan temizlenmiş olasılık ≥ %75 · Orta: %66–75. Her pazar grubundan en olası tek seçenek;
     #    aynı hikâyeyi anlatan ikili (2,5 üst + KG var, 2,5 alt + KG yok) tek sinyal sayılır.
     #    "Değerli fiyat": ikinci kaynağın oranıyla beklenen getiri artıdaysa (olasılık × en iyi oran ≥ 1).
     sinyaller, gorulen = [], set()

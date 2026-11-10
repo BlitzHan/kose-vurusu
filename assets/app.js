@@ -153,7 +153,7 @@
         </div>`;
     };
     const sg = o.sinyaller.length ? o.sinyaller.map(satir).join('')
-      : `<div class="sinyal-yok"><b>Sinyal yok.</b> 1,35 ve üstü oranlarda hiçbir seçenek %56 olasılığa ulaşmıyor; maç her yöne açık.</div>`;
+      : `<div class="sinyal-yok"><b>Sinyal yok.</b> 1,15 ve üstü oranlarda hiçbir seçenek %66 olasılığa ulaşmıyor; maç her yöne açık.</div>`;
     const sn = o.senaryolar;
     const bar = sn.map((x) => `<span class="sn sn-${x.kod}" style="flex:${Math.max(x.p, 0.02)}" title="${esc(x.ad)} ${yuzde(x.p)}">${x.p >= 0.12 ? yuzde(x.p) : ''}</span>`).join('');
     const enIyi = [...sn].sort((a, b) => b.p - a.p).slice(0, 3);
@@ -289,7 +289,7 @@
         .sort((a, b) => o.olasilik[b.kod] - o.olasilik[a.kod]);
       if (!satirlar.length) return '';
       return `<tr class="gr"><td colspan="${bitti ? 5 : 4}">${esc(g)}</td></tr>` + satirlar.map((x) =>
-        `<tr class="${secili.has(x.kod) ? 'secili' : ''}${x.oran < 1.35 ? ' elendi' : ''}"><td>${esc(x.ad)}</td><td>${oranYaz(x.oran)}</td><td><b>${yuzde(o.olasilik[x.kod])}</b></td><td>${yuzde(x.gecmis)}</td>${bitti ? `<td>${olanYaz(olan(m, x.kod))}</td>` : ''}</tr>`).join('');
+        `<tr class="${secili.has(x.kod) ? 'secili' : ''}${x.oran < 1.15 ? ' elendi' : ''}"><td>${esc(x.ad)}</td><td>${oranYaz(x.oran)}</td><td><b>${yuzde(o.olasilik[x.kod])}</b></td><td>${yuzde(x.gecmis)}</td>${bitti ? `<td>${olanYaz(olan(m, x.kod))}</td>` : ''}</tr>`).join('');
     }).join('');
     const mt = o.matris, enb = Math.max(...mt.flat());
     const olanSkor = m.sonuc && m.sonuc.skor;
@@ -303,7 +303,7 @@
     return `<div class="tablo-kap"><table class="pazar-tablo tum">
         <thead><tr><th>Seçenek</th><th>Oran</th><th title="Oranlardan kesinti temizlenmiş olasılık">Olasılık</th><th title="İki takımın son 10 maçında bu sonucun sıklığı">Son 10</th>${bitti ? '<th title="Maçta gerçekleşti mi">Olan</th>' : ''}</tr></thead>
         <tbody>${govde}</tbody></table></div>
-      <p class="bg">Oranların beklediği gol: <b>${ondalik(o.lambda[0], 2)} – ${ondalik(o.lambda[1], 2)}</b>. Soluk satırlar 1,35 altı: sinyal olamaz.</p>
+      <p class="bg">Oranların beklediği gol: <b>${ondalik(o.lambda[0], 2)} – ${ondalik(o.lambda[1], 2)}</b>. Soluk satırlar 1,15 altı: sinyal olamaz.</p>
       <div class="matris" role="img" aria-label="Skor olasılıkları yüzde">${h}</div>
       <div class="matris-alt"><span>Satır: ${esc(kisa(m.ev.ad))} golü</span><span>Sütun: ${esc(kisa(m.dep.ad))} golü · %</span></div>
       <p class="not">Olasılık: her pazarın oranlarından büro kesintisi temizlenir (güç yöntemi). Skor matrisi bu olasılıklara en iyi uyan beklenen golle kurulur. Yeşil satırlar sinyal.</p>`;
