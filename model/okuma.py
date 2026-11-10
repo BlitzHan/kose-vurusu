@@ -230,7 +230,7 @@ def birlesik(M, ev, dep):
     return {k: (ad, sum(M[i][j] for i in range(N) for j in range(N) if f(i, j))) for k, (ad, f) in kosul.items()}
 
 
-def oku(mac):
+def oku(mac, *, guclu=GUCLU, iadeli=True, surum=SURUM):
     """Bir maç kaydından okuma bloğu. Girdi yalnız maç öncesi oranlar ve son maçlar."""
     pazarlar = mac['model']['pazarlar']
     pz = {p['kod']: p for p in pazarlar}
@@ -279,7 +279,12 @@ def oku(mac):
     #    aynı hikâyeyi anlatan ikili (2,5 üst + KG var, 2,5 alt + KG yok) tek sinyal sayılır.
     #    "Değerli fiyat": ikinci kaynağın oranıyla beklenen getiri artıdaysa (olasılık × en iyi oran ≥ 1).
     sinyaller, gorulen = [], set()
-    adaylar = sorted(((q[k], k) for k in q if _grup(k) and pz.get(k, {}).get('oran', 0) >= ORAN_MIN), reverse=True)
+    adaylar = sorted(
+        ((q[k], k) for k in q
+         if _grup(k) and (iadeli or not k.startswith('DNB'))
+         and pz.get(k, {}).get('oran', 0) >= ORAN_MIN),
+        reverse=True,
+    )
     for p, k in adaylar:
         g = _grup(k)
         if g in gorulen or p < ORTA:
@@ -290,7 +295,7 @@ def oku(mac):
             continue
         gorulen.add(g)
         s = secim(k)
-        s['seviye'] = 'Güçlü' if p >= GUCLU else 'Orta'
+        s['seviye'] = 'Güçlü' if p >= guclu else 'Orta'
         en_iyi = max(x for x in (pz[k].get('oran'), pz[k].get('oran_b')) if x)
         s['en_iyi'] = en_iyi
         s['deger'] = round(p * en_iyi - 1, 4)
@@ -312,7 +317,7 @@ def oku(mac):
             cesur = {'kod': k, 'ad': ad, 'p': round(p, 4), 'oran': None, 'adil_oran': round(1 / p, 2), 'kanit': ''}
 
     return {
-        'surum': SURUM,
+        'surum': surum,
         'lambda': [l1, l2],
         'olasilik': {k: round(v, 4) for k, v in sorted(q.items())},
         'tahmin': tahmin,
