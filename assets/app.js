@@ -132,7 +132,7 @@
   // ---------------------------------------------------------------- okuma
   function okumaBlok(m) {
     const o = m.okuma;
-    if (!o) return '<div class="sinyal-yok">Bu maçta oran yok, okuma yapılamadı.</div>';
+    if (!o) return '<div class="sinyal-yok">Okuma için maç sonucu oranları bekleniyor.</div>';
     const t = o.tahmin;
     const td = durumAd(olan(m, t.kod));
     const guvenAd = { 'yüksek': 'net favori', orta: 'hafif favori', 'düşük': 'açık maç' }[t.guven];
@@ -381,8 +381,8 @@
       `<div class="takim-sec" role="group" aria-label="Takım">${['ev', 'dep'].map((t) =>
         `<button type="button" data-takim-sec="${t}" aria-pressed="${t === taraf}">${esc(m[t].ad)}</button>`).join('')}</div>`;
     let panel;
-    if (sekme === 'maclar') panel = macTablosu(m[taraf]);
-    else if (sekme === 'oyuncular') panel = oyuncuPaneli(m[taraf], m.model.form[taraf], m.kadro[taraf].eksik);
+    if (sekme === 'maclar') panel = m[taraf].maclar.length ? macTablosu(m[taraf]) : '<p class="not">Bu maç için geçmiş maç verisi yok.</p>';
+    else if (sekme === 'oyuncular') panel = m[taraf].oyuncular.length ? oyuncuPaneli(m[taraf], m.model.form[taraf], m.kadro[taraf].eksik) : '<p class="not">Bu maç için oyuncu verisi yok.</p>';
     else if (sekme === 'durum') panel = durumPaneli(m);
     else panel = m.okuma ? olasilikPaneli(m) : '<p class="not">Oran yok.</p>';
     $('.cekmece-ic', el).innerHTML = `
