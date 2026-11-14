@@ -57,7 +57,7 @@ def isle(m, r):
         'isabet': {
             'oneriler': [{'kod': o['kod'], 'tuttu': None if olan[o['kod']] is None else olan[o['kod']] >= 0.5,
                           'iade': olan[o['kod']] is None} for o in m['oneriler']],
-            'skor': m['model']['skorlar'][0][0] == skor,
+            'skor': (m['model']['skorlar'][0][0] if m['model'].get('skorlar') else ((m.get('okuma') or {}).get('skor') or {}).get('skor')) == skor,
         },
     }
     if r.get('oranlar'):
