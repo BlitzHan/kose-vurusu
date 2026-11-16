@@ -20,6 +20,7 @@ TURNUVA = {
     'Scottish Cup': 'İskoçya Kupası', 'EFL Cup': 'Lig Kupası', 'FA Cup': 'FA Kupası', 'DFB Pokal': 'Almanya Kupası',
     'Coppa Italia': 'İtalya Kupası', 'Copa del Rey': 'İspanya Kupası', 'Premiership': 'İskoçya Ligi',
     'Premier League': 'Premier League', 'Ukrainian Premier League': 'Ukrayna Ligi',
+    'UEFA Nations League': 'UEFA Uluslar Ligi',
 }
 AVRUPA_KISA = {'Şampiyonlar Ligi': 'ŞL', 'Avrupa Ligi': 'AL', 'Konferans Ligi': 'KL'}
 LIG_MAC = {'Şampiyonlar Ligi': 8, 'Avrupa Ligi': 8, 'Konferans Ligi': 6}
@@ -209,6 +210,10 @@ def onem(h, taraf, avrupa_ad):
 def kayit(h, eski=None, surum='v7'):
     mac = h['mac']
     ev, dep = AD.get(mac['ev']['ad'], mac['ev']['ad']), AD.get(mac['dep']['ad'], mac['dep']['ad'])
+    # önceden açılmış kayıt varsa onun Türkçe takım adları kullanılır (pazar adları da bunlarla yazılır)
+    if eski:
+        ev = (eski.get('ev') or {}).get('ad') or ev
+        dep = (eski.get('dep') or {}).get('ad') or dep
     avrupa = tr(mac['ut_ad'])
     t = datetime.fromtimestamp(mac['ts'], TSI)
     kd = h['kadro'] or {}
@@ -270,6 +275,10 @@ def kayit(h, eski=None, surum='v7'):
     if eski:
         for k in ('baslik', 'ozet', 'yayin', 'manset'):
             m[k] = eski.get(k, m[k])
+        # Türkçe kimlik, turnuva adı ve oran tabanı korunur
+        for k in ('id', 'turnuva', 'oran_min'):
+            if eski.get(k):
+                m[k] = eski[k]
     return m
 
 
